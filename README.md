@@ -4,7 +4,7 @@
 
 [Play the arcade](https://mjamiv.github.io/arcade-o-rade/) · [Development workflow](CONTRIBUTING.md) · [Studio roadmap](docs/ROADMAP.md) · [Architecture](docs/ARCHITECTURE.md)
 
-This is the shared home for every Arcade-o-Rade game: source, design, assets, playtests, and browser releases. The studio foundation is ready; the first game's requirements and engine are intentionally undecided.
+This is the shared home for every Arcade-o-Rade game: source, design, assets, playtests, and browser releases. Our first playable is **[Apex Coast](https://mjamiv.github.io/arcade-o-rade/games/apex-coast/)**: a mobile-first 3D driving alpha with three simulated vehicles, a coastal circuit, time trials, and Free Drive.
 
 ## Start locally
 

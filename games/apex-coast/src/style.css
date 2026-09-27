@@ -1,0 +1,1529 @@
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #f3f1e8;
+  background: #172323;
+  font-synthesis: none;
+  --accent: #e7fb86;
+  --orange: #f27549;
+  --ink: #162424;
+  --muted: #b5c2bd;
+  --panel: rgba(18, 30, 31, 0.84);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  overflow: hidden;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+select,
+input {
+  font: inherit;
+}
+button,
+a {
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button {
+  border: 0;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+a {
+  text-decoration: none;
+}
+.hidden {
+  display: none !important;
+}
+#scene {
+  position: fixed;
+  inset: 0;
+}
+#scene canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(9, 23, 27, 0.88) 0%,
+      rgba(12, 24, 27, 0.62) 26%,
+      rgba(14, 30, 34, 0.03) 65%
+    ),
+    linear-gradient(0deg, rgba(11, 25, 28, 0.97), transparent 46%);
+  transition: opacity 0.5s;
+}
+body.driving .vignette {
+  opacity: 0;
+}
+.screen {
+  position: fixed;
+  inset: 0;
+  padding: 30px 4%;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+.screen button,
+.screen a {
+  pointer-events: auto;
+}
+.garage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.brand-mark {
+  font-size: 36px;
+  font-style: italic;
+  letter-spacing: -7px;
+  padding-right: 5px;
+}
+.brand-mark span,
+.hud-logo > span {
+  color: var(--accent);
+}
+.brand small {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 1.6px;
+  margin-top: 6px;
+  color: #c5cfcd;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.edition {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #e2e8e2;
+}
+.icon-button {
+  height: 39px;
+  min-width: 39px;
+  border: 1px solid #d2e3dc55;
+  background: rgba(13, 28, 31, 0.48);
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+}
+.icon-button:hover {
+  background: #3c5048;
+}
+.garage-copy {
+  margin-top: clamp(25px, 5vh, 65px);
+  max-width: 470px;
+}
+.eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  margin: 0 0 17px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.eyebrow > span:not(:empty) {
+  display: inline;
+}
+.eyebrow > span:empty {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+h1 {
+  font-size: clamp(56px, 7.9vw, 112px);
+  line-height: 0.9;
+  letter-spacing: -6px;
+  font-weight: 900;
+  margin: 0 0 24px;
+  font-style: italic;
+}
+h1 em {
+  font-style: inherit;
+  color: var(--accent);
+}
+.garage-intro {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #d1dcda;
+  margin-bottom: 24px;
+}
+.location {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+.location small {
+  display: block;
+  font-size: 7px;
+  margin-top: 8px;
+  letter-spacing: 1.2px;
+  color: #a3b7b6;
+}
+.location-pin {
+  font-size: 30px;
+  color: var(--accent);
+}
+.car-label {
+  position: absolute;
+  right: 7%;
+  top: 49%;
+  text-align: right;
+  text-shadow: 0 2px 6px #142027bb;
+}
+.car-label span {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 2.2px;
+}
+.car-label strong {
+  font-size: 25px;
+  letter-spacing: 2px;
+  font-style: italic;
+  display: block;
+  margin: 9px 0;
+}
+.garage-bottom {
+  margin-top: auto;
+  pointer-events: auto;
+  padding-top: 18px;
+}
+.selection-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.selection-heading .eyebrow {
+  margin: 0;
+  font-size: 8px;
+  color: #c0cecc;
+}
+#paint-options {
+  display: flex;
+  gap: 10px;
+}
+.paint {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  padding: 0;
+  box-shadow: 0 0 0 3px transparent;
+}
+.paint.active {
+  box-shadow: 0 0 0 2px #eaf4d8;
+  border-color: #162424;
+}
+.vehicle-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.vehicle-card {
+  text-align: left;
+  color: #ebeee7;
+  background: rgba(24, 41, 44, 0.76);
+  border: 1px solid #bed7cc2b;
+  padding: 18px 19px;
+  position: relative;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.vehicle-card:hover {
+  background: rgba(50, 66, 64, 0.94);
+}
+.vehicle-card.active {
+  border-color: var(--accent);
+  background: rgba(50, 66, 55, 0.87);
+}
+.vehicle-card .vehicle-number {
+  font-size: 8px;
+  color: #adc0b7;
+}
+.vehicle-card .drivetrain {
+  float: right;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+.vehicle-card h3 {
+  font-size: 17px;
+  font-weight: 800;
+  font-style: italic;
+  margin: 10px 0 5px;
+  letter-spacing: 0.5px;
+}
+.vehicle-card p {
+  font-size: 9px;
+  margin: 0 0 15px;
+  color: #b0c0ba;
+}
+.vehicle-stats {
+  display: flex;
+  gap: 22px;
+  border-top: 1px solid #c6d6cc22;
+  padding-top: 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.vehicle-stats small {
+  font-weight: 400;
+  font-size: 7px;
+  color: #aebfb7;
+  letter-spacing: 1px;
+  display: block;
+  margin-top: 4px;
+}
+.launch-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 16px;
+}
+.mode-options {
+  display: flex;
+  border: 1px solid #d4e4d122;
+  flex: 1;
+}
+.mode {
+  color: #c1c9c3;
+  background: transparent;
+  text-align: left;
+  min-width: 165px;
+  padding: 14px 20px;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  border-right: 1px solid #d4e4d122;
+}
+.mode small {
+  display: block;
+  font-size: 7px;
+  color: #96aaa2;
+  margin-top: 6px;
+  letter-spacing: 0.7px;
+}
+.mode.active {
+  background: #c8d9b818;
+  color: var(--accent);
+}
+.mode.active::before {
+  content: '●';
+  font-size: 7px;
+  margin-right: 7px;
+}
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 38px;
+  padding: 18px 28px;
+  background: var(--accent);
+  color: #20302a;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  border: 1px solid var(--accent);
+  min-height: 55px;
+  transition: background 0.2s;
+}
+.primary:hover {
+  background: #f1ffa8;
+}
+.primary span {
+  font-size: 24px;
+  font-weight: 400;
+}
+.garage-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 19px;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: #b4c4be;
+}
+.garage-footer button {
+  background: none;
+  font-size: 7px;
+  letter-spacing: 1.1px;
+  padding: 0;
+}
+.garage-footer button span {
+  color: var(--accent);
+  margin-left: 7px;
+}
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  padding: 24px 30px;
+  text-shadow: 0 1px 5px #14222599;
+}
+#hud button {
+  pointer-events: auto;
+}
+.hud-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.hud-logo {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -5px;
+  font-style: italic;
+}
+.hud-logo small {
+  display: block;
+  font-size: 7px;
+  font-style: normal;
+  letter-spacing: 2px;
+  margin-top: 6px;
+}
+.timing {
+  display: flex;
+  background: rgba(14, 27, 30, 0.68);
+  backdrop-filter: blur(8px);
+  border: 1px solid #d5e0d52b;
+}
+.timing > div {
+  padding: 14px 25px;
+  border-right: 1px solid #e2e9d51c;
+  min-width: 130px;
+}
+.timing > div:last-child {
+  border: 0;
+}
+.timing span {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #bbd0c8;
+  margin-bottom: 7px;
+}
+.timing strong {
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.timing i {
+  font-size: 12px;
+  font-style: normal;
+  color: #becdc5;
+}
+.hud-top .icon-button {
+  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  font-size: 19px;
+}
+#race-message {
+  position: absolute;
+  left: 50%;
+  top: 130px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+  background: #152824c9;
+  padding: 11px 20px;
+  border-radius: 3px;
+  transition: opacity 0.2s;
+  max-width: 80%;
+  width: max-content;
+}
+#race-message:empty {
+  opacity: 0;
+}
+.map-panel {
+  position: absolute;
+  left: 28px;
+  bottom: 76px;
+  width: 180px;
+  background: #1525249e;
+  border: 1px solid #d6e1d221;
+  backdrop-filter: blur(5px);
+  padding: 11px;
+}
+.map-panel canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.map-panel > div {
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: #c8d5cb;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.map-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+#checkpoint {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 6px;
+}
+.speedometer {
+  position: absolute;
+  right: 32px;
+  bottom: 76px;
+  width: 246px;
+  padding: 16px 19px;
+  background: linear-gradient(120deg, #152323e6, #172c2cab);
+  border: 1px solid #c4dbc930;
+  backdrop-filter: blur(7px);
+}
+.tach {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    #dfebd53b 0,
+    #dfebd53b 6%,
+    transparent 6%,
+    transparent 7%
+  );
+  position: relative;
+  margin-bottom: 7px;
+}
+.tach div {
+  height: 100%;
+  width: 10%;
+  background: var(--accent);
+  transition: width 0.1s;
+}
+.speed-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.speed-line strong {
+  font-size: 66px;
+  font-weight: 500;
+  letter-spacing: -4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.speed-line #gear {
+  display: grid;
+  place-items: center;
+  border: 1px solid #b5c8b862;
+  font-size: 21px;
+  height: 37px;
+  min-width: 31px;
+  color: var(--accent);
+}
+.speed-line #units {
+  font-size: 8px;
+  color: #bfcfc5;
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+}
+.car-instrument {
+  display: flex;
+  justify-content: space-between;
+  font-size: 6px;
+  letter-spacing: 1.1px;
+  padding: 4px 0 12px;
+  color: #b5c7bc;
+}
+.car-instrument span:last-child {
+  color: var(--accent);
+}
+.pedals {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 6px;
+  color: #b9c7bf;
+}
+.pedals > div {
+  height: 3px;
+  background: #c6dbc42b;
+  flex: 1;
+}
+.pedals i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: #def296;
+}
+.pedals > div:last-child i {
+  background: #f37755;
+}
+.drive-hints {
+  position: absolute;
+  bottom: 28px;
+  left: 30px;
+  right: 30px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+.drive-hints kbd {
+  border: 1px solid #e0e9d659;
+  padding: 4px 5px;
+  border-radius: 2px;
+  font-family: inherit;
+  margin-right: 5px;
+  font-size: 7px;
+  background: #0f252448;
+}
+.drive-hints button {
+  margin-left: auto;
+  padding: 7px 10px;
+  background: #152724a6;
+  border: 1px solid #c7d6bd3b;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+.touch-controls {
+  display: none;
+}
+.touch-controls.show {
+  display: block;
+}
+.touch-steer,
+.touch-pedals {
+  position: absolute;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  display: flex;
+  gap: 12px;
+}
+.touch-steer {
+  left: 18px;
+}
+.touch-pedals {
+  right: 18px;
+}
+.touch-controls button {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: #17312bd4;
+  border: 1px solid #e6f0d874;
+  border-radius: 9px;
+  color: #edf2df;
+  backdrop-filter: blur(5px);
+}
+.touch-controls .pressed {
+  background: #b1d47fe0;
+  color: #162b24;
+}
+.touch-steer button {
+  height: 70px;
+  width: 66px;
+  font-size: 40px;
+  line-height: 1;
+}
+.touch-pedals button {
+  height: 80px;
+  width: 73px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.touch-pedals small {
+  display: block;
+  font-size: 5px;
+  margin-top: 8px;
+  font-weight: 400;
+}
+.touch-pedals .touch-gas {
+  background: #d4ef8dde;
+  color: #21392b;
+  border-color: #d9f195;
+  height: 100px;
+  align-self: end;
+}
+.touch-gas span {
+  display: block;
+  font-size: 24px;
+  margin-top: 8px;
+}
+#touch-camera,
+#touch-reset {
+  position: absolute;
+  right: 20px;
+  top: 100px;
+  height: 35px;
+  min-width: 40px;
+  font-size: 9px;
+}
+#touch-reset {
+  top: 145px;
+  font-size: 21px;
+}
+body.touch .drive-hints > span {
+  display: none;
+}
+body.touch .drive-hints {
+  bottom: 140px;
+  right: 20px;
+}
+body.touch .map-panel {
+  bottom: 145px;
+  width: 140px;
+}
+body.touch .speedometer {
+  bottom: 145px;
+  right: 20px;
+  width: 186px;
+  padding: 10px 14px;
+}
+body.touch .speed-line strong {
+  font-size: 48px;
+}
+body.touch .speed-line {
+  gap: 9px;
+}
+body.touch .car-instrument {
+  font-size: 5px;
+}
+body.touch .drive-hints button {
+  position: absolute;
+  top: -30px;
+  right: 0;
+}
+#countdown {
+  position: fixed;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  text-shadow: 0 5px 30px #10262877;
+  pointer-events: none;
+}
+#countdown span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: #ecf7d7;
+}
+#countdown strong {
+  font-size: 140px;
+  font-style: italic;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -8px;
+  line-height: 1.2;
+}
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 23, 26, 0.7);
+  backdrop-filter: blur(13px);
+  padding: 20px;
+  overflow: auto;
+}
+.modal {
+  width: min(420px, 100%);
+  padding: 36px;
+  background: #172a2be8;
+  border: 1px solid #d6e3cd36;
+  box-shadow: 0 20px 90px #06161966;
+}
+.modal h2,
+dialog h2 {
+  font-size: 44px;
+  font-style: italic;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin: 0 0 15px;
+}
+.modal > p {
+  font-size: 12px;
+  color: #b4c8bf;
+  line-height: 1.7;
+}
+.modal .primary {
+  width: 100%;
+  margin-top: 24px;
+}
+.secondary {
+  display: block;
+  width: 100%;
+  background: #c6e3ca12;
+  border: 1px solid #c9dece26;
+  margin-top: 10px;
+  font-size: 11px;
+  padding: 14px;
+}
+.secondary:hover {
+  background: #c6e3ca28;
+}
+.text-button {
+  display: block;
+  background: none;
+  text-align: center;
+  width: 100%;
+  padding: 17px 0 0;
+  font-size: 10px;
+  color: #cad8cb;
+}
+.results-modal {
+  text-align: center;
+}
+.results-modal .eyebrow {
+  justify-content: center;
+}
+.medal {
+  font-size: 48px;
+  color: var(--accent);
+  margin: 4px 0 16px;
+}
+#result-times {
+  margin-top: 22px;
+}
+#result-times > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid #d6e3cd26;
+  font-size: 12px;
+}
+#result-times span {
+  color: #a8bdb1;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+#record-message {
+  color: var(--accent);
+  font-size: 10px;
+}
+dialog {
+  background: #162b2c;
+  color: #edf0e3;
+  border: 1px solid #dbe8cd55;
+  width: min(540px, 94vw);
+  max-height: 90vh;
+  padding: 32px;
+  box-shadow: 0 20px 90px #00191c88;
+}
+dialog::backdrop {
+  background: #0b191cb5;
+  backdrop-filter: blur(8px);
+}
+.close {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  background: none;
+  font-size: 29px;
+  color: #d4e3d4;
+}
+.setting {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 17px 0;
+  border-bottom: 1px solid #adc1b32b;
+  font-size: 12px;
+}
+.setting small {
+  display: block;
+  font-size: 9px;
+  color: #afc0b6;
+  margin-top: 7px;
+  line-height: 1.6;
+}
+.setting input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.setting input[type='range'] {
+  accent-color: var(--accent);
+  max-width: 120px;
+}
+.setting select {
+  background: #263c39;
+  color: #e4eed8;
+  border: 1px solid #93aa904d;
+  padding: 8px;
+  font-size: 11px;
+}
+.controls-guide h3 {
+  font-size: 9px;
+  letter-spacing: 2px;
+  margin-top: 24px;
+  color: var(--accent);
+}
+.controls-guide p {
+  font-size: 10px;
+  color: #b9cfc3;
+  line-height: 1.8;
+}
+.controls-guide kbd {
+  font-family: inherit;
+  color: #edf5df;
+  font-size: 9px;
+}
+.control-tip {
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+}
+#save-note {
+  font-size: 9px;
+  line-height: 1.7;
+  color: #a2b8ac;
+  margin: 20px 0 0;
+}
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #14282a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.loading-mark {
+  font-size: 70px;
+  font-weight: 800;
+  letter-spacing: -10px;
+  font-style: italic;
+}
+.loading-mark span {
+  color: var(--accent);
+}
+#loading p {
+  font-size: 9px;
+  letter-spacing: 3px;
+  margin-top: 25px;
+}
+.loading-bar {
+  height: 2px;
+  width: 150px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: load 1s ease-in-out infinite;
+}
+@keyframes load {
+  50% {
+    opacity: 0.3;
+    transform: scaleX(0.5);
+  }
+}
+@media (min-width: 1500px) {
+  .screen {
+    padding: 38px 5%;
+  }
+  .garage-copy {
+    margin-top: 7vh;
+  }
+  .vehicle-card {
+    padding: 21px 25px;
+  }
+  .garage-bottom {
+    max-width: 1400px;
+    width: 100%;
+    align-self: center;
+  }
+  .garage-footer {
+    margin-top: 24px;
+  }
+  .car-label {
+    top: 49%;
+  }
+}
+@media (max-height: 760px) and (min-width: 761px) {
+  .screen {
+    padding: 20px 4%;
+  }
+  .garage-copy {
+    margin-top: 22px;
+  }
+  h1 {
+    font-size: 70px;
+    margin-bottom: 14px;
+  }
+  .garage-intro {
+    font-size: 11px;
+    margin-bottom: 13px;
+  }
+  .location small {
+    font-size: 6px;
+  }
+  .location {
+    font-size: 8px;
+  }
+  .vehicle-card {
+    padding: 12px 16px;
+  }
+  .vehicle-card h3 {
+    font-size: 15px;
+    margin: 6px 0;
+  }
+  .vehicle-card p {
+    margin-bottom: 9px;
+  }
+  .vehicle-stats {
+    padding-top: 8px;
+  }
+  .garage-footer {
+    margin-top: 13px;
+  }
+  .garage-bottom {
+    padding-top: 12px;
+  }
+  .mode {
+    padding: 12px 16px;
+  }
+  .car-label {
+    top: 43%;
+  }
+}
+@media (max-width: 760px) {
+  .screen {
+    padding: 20px 5%;
+  }
+  .edition {
+    display: none;
+  }
+  .brand-mark {
+    font-size: 29px;
+  }
+  .brand {
+    font-size: 9px;
+    gap: 12px;
+  }
+  .brand small {
+    font-size: 5px;
+  }
+  .icon-button {
+    height: 33px;
+    min-width: 33px;
+    font-size: 18px;
+  }
+  .garage-copy {
+    margin-top: 34px;
+  }
+  h1 {
+    font-size: 68px;
+    letter-spacing: -4px;
+    margin-bottom: 14px;
+  }
+  .garage-intro {
+    font-size: 10px;
+    line-height: 1.7;
+    margin-bottom: 17px;
+  }
+  .location {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+  .location small {
+    font-size: 5px;
+  }
+  .location-pin {
+    font-size: 24px;
+  }
+  .car-label {
+    right: 6%;
+    top: 48%;
+  }
+  .car-label span {
+    font-size: 5px;
+    letter-spacing: 1px;
+  }
+  .car-label strong {
+    font-size: 16px;
+    margin: 6px 0;
+  }
+  .vehicle-options {
+    gap: 6px;
+  }
+  .vehicle-card {
+    padding: 11px 9px;
+  }
+  .vehicle-card h3 {
+    font-size: 11px;
+    margin-top: 9px;
+  }
+  .vehicle-card p {
+    display: none;
+  }
+  .vehicle-card .vehicle-number,
+  .vehicle-card .drivetrain {
+    font-size: 6px;
+  }
+  .vehicle-stats {
+    gap: 12px;
+    font-size: 9px;
+    margin-top: 10px;
+  }
+  .vehicle-stats small {
+    font-size: 5px;
+  }
+  .vehicle-stats > div:last-child {
+    display: none;
+  }
+  .selection-heading .eyebrow {
+    font-size: 6px;
+    letter-spacing: 1.5px;
+  }
+  .paint {
+    width: 13px;
+    height: 13px;
+  }
+  #paint-options {
+    gap: 8px;
+  }
+  .launch-row {
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 10px;
+  }
+  .mode-options {
+    width: 100%;
+  }
+  .mode {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 12px;
+    font-size: 8px;
+  }
+  .mode small {
+    font-size: 6px;
+    margin-top: 4px;
+  }
+  .primary {
+    padding: 14px 20px;
+    min-height: 51px;
+    font-size: 10px;
+  }
+  .garage-footer {
+    margin-top: 12px;
+    font-size: 5px;
+    letter-spacing: 0.6px;
+  }
+  .garage-footer button {
+    font-size: 6px;
+    letter-spacing: 0.4px;
+  }
+  .garage-bottom {
+    padding-top: 12px;
+  }
+  .hud-top {
+    gap: 10px;
+  }
+  .hud-logo {
+    font-size: 24px;
+  }
+  .hud-logo small {
+    font-size: 5px;
+    letter-spacing: 1px;
+  }
+  #hud {
+    padding: 18px 15px;
+  }
+  .timing > div {
+    padding: 10px 12px;
+    min-width: 0;
+  }
+  .timing span {
+    font-size: 5px;
+    letter-spacing: 1px;
+  }
+  .timing strong {
+    font-size: 16px;
+  }
+  .timing .best-block {
+    display: none;
+  }
+  .timing i {
+    font-size: 9px;
+  }
+  .hud-top .icon-button {
+    width: 33px;
+    height: 33px;
+    min-width: 33px;
+  }
+  #race-message {
+    top: 100px;
+    font-size: 8px;
+    padding: 9px 14px;
+  }
+  #countdown strong {
+    font-size: 100px;
+  }
+  .map-panel {
+    left: 15px;
+  }
+  .drive-hints {
+    gap: 8px;
+    left: 15px;
+    right: 15px;
+  }
+  .drive-hints > span {
+    font-size: 5px;
+  }
+  .drive-hints kbd {
+    font-size: 5px;
+    padding: 3px;
+  }
+  .speedometer {
+    width: 190px;
+    right: 15px;
+  }
+  .speed-line strong {
+    font-size: 48px;
+  }
+  .modal {
+    padding: 28px;
+  }
+  .modal h2,
+  dialog h2 {
+    font-size: 36px;
+  }
+  dialog {
+    padding: 26px;
+  }
+  .setting {
+    font-size: 11px;
+  }
+  .setting small {
+    font-size: 8px;
+  }
+}
+@media (max-height: 550px) {
+  .screen {
+    padding: 14px 4%;
+  }
+  .garage-header {
+    height: 30px;
+  }
+  .garage-copy {
+    margin-top: 17px;
+  }
+  .garage-copy h1 {
+    font-size: 49px;
+    letter-spacing: -3px;
+    margin-bottom: 9px;
+  }
+  .garage-copy .eyebrow {
+    font-size: 6px;
+    margin-bottom: 10px;
+  }
+  .garage-intro {
+    font-size: 9px;
+    margin: 0;
+  }
+  .location {
+    display: none;
+  }
+  .garage-bottom {
+    padding-top: 8px;
+  }
+  .selection-heading {
+    margin-bottom: 7px;
+  }
+  .vehicle-card {
+    padding: 8px 12px;
+  }
+  .vehicle-card h3 {
+    font-size: 12px;
+    margin: 5px 0;
+  }
+  .vehicle-card p {
+    display: none;
+  }
+  .vehicle-stats {
+    padding-top: 6px;
+    margin-top: 5px;
+    font-size: 9px;
+  }
+  .vehicle-stats small {
+    display: inline;
+    margin-left: 4px;
+    font-size: 5px;
+  }
+  .vehicle-stats > div:last-child {
+    display: none;
+  }
+  .launch-row {
+    flex-direction: row;
+    margin-top: 8px;
+    gap: 12px;
+  }
+  .mode-options {
+    width: auto;
+  }
+  .mode {
+    min-width: 130px;
+    padding: 8px 10px;
+    font-size: 7px;
+  }
+  .mode small {
+    font-size: 5px;
+  }
+  .primary {
+    min-height: 42px;
+    padding: 9px 20px;
+  }
+  .garage-footer {
+    display: none;
+  }
+  .car-label {
+    top: 38%;
+  }
+  .car-label strong {
+    font-size: 18px;
+  }
+  .car-label span {
+    font-size: 5px;
+  }
+  .garage-copy {
+    max-width: 300px;
+  }
+  body.touch .map-panel {
+    left: 180px;
+    bottom: 20px;
+    width: 100px;
+  }
+  body.touch .speedometer {
+    right: 205px;
+    bottom: 20px;
+    width: 150px;
+  }
+  body.touch .speed-line strong {
+    font-size: 38px;
+  }
+  body.touch .speed-line #gear {
+    font-size: 16px;
+    min-width: 23px;
+    height: 27px;
+  }
+  body.touch .drive-hints {
+    bottom: 25px;
+    right: 370px;
+  }
+  body.touch .drive-hints button {
+    display: none;
+  }
+  .touch-steer button {
+    width: 59px;
+    height: 59px;
+  }
+  .touch-pedals button {
+    height: 65px;
+    width: 64px;
+  }
+  .touch-pedals .touch-gas {
+    height: 79px;
+  }
+  .car-instrument {
+    font-size: 5px;
+  }
+  .modal {
+    padding: 22px;
+  }
+  .modal h2 {
+    font-size: 30px;
+  }
+  .modal .eyebrow {
+    margin-bottom: 12px;
+  }
+  .modal .primary {
+    margin-top: 16px;
+  }
+  .secondary {
+    padding: 10px;
+  }
+  .modal > p {
+    font-size: 10px;
+  }
+  .medal {
+    font-size: 28px;
+    margin-bottom: 9px;
+  }
+  .results-modal {
+    max-width: 600px;
+  }
+  .results-modal h2 {
+    font-size: 26px;
+  }
+  #result-times {
+    margin-top: 10px;
+  }
+  #result-times > div {
+    padding: 7px 0;
+  }
+  #countdown strong {
+    font-size: 90px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+h1,
+h2,
+.car-label strong {
+  font-family: 'Barlow Condensed', Impact, sans-serif;
+}
+h1 {
+  font-size: clamp(70px, 8.6vw, 124px);
+  letter-spacing: -2px;
+  max-width: 480px;
+}
+.garage-copy {
+  max-width: 500px;
+}
+.header-right {
+  text-shadow: 0 1px 4px #183031;
+}
+.edition {
+  color: #26423d;
+}
+@media (max-width: 760px) {
+  h1 {
+    font-size: 72px;
+    letter-spacing: -1px;
+  }
+  .garage-copy {
+    max-width: 310px;
+  }
+}
+@media (max-height: 760px) and (min-width: 761px) {
+  h1 {
+    font-size: 82px;
+  }
+}
+@media (max-height: 550px) {
+  .garage-copy h1 {
+    font-size: 53px;
+  }
+}
+
+/* Thumb-friendly mobile hit areas and unobstructed instruments. */
+body.touch .drive-hints {
+  top: 86px;
+  bottom: auto;
+  left: 15px;
+  right: auto;
+}
+body.touch .drive-hints button {
+  position: static;
+  min-height: 36px;
+  padding: 8px 12px;
+}
+#touch-camera,
+#touch-reset {
+  height: 44px;
+  min-width: 48px;
+}
+#touch-reset {
+  top: 151px;
+}
+@media (max-width: 760px) {
+  .icon-button,
+  .hud-top .icon-button {
+    height: 44px;
+    min-width: 44px;
+  }
+  .paint {
+    width: 28px;
+    height: 28px;
+  }
+  #paint-options {
+    gap: 7px;
+  }
+  .selection-heading .eyebrow {
+    max-width: 130px;
+    line-height: 1.6;
+  }
+  .car-label {
+    top: 47%;
+    right: 7%;
+    text-shadow: 0 2px 8px #122323;
+  }
+  .garage-intro {
+    color: #e0e6dc;
+  }
+}
+@media (max-height: 550px) {
+  body.touch .drive-hints {
+    display: none;
+  }
+  .paint {
+    width: 16px;
+    height: 16px;
+  }
+  .selection-heading .eyebrow {
+    max-width: none;
+  }
+  .icon-button {
+    height: 33px;
+    min-width: 33px;
+  }
+}
+
+.credits {
+  font-size: 10px;
+  color: #d5e5c4;
+  margin: 18px 0 0;
+}
