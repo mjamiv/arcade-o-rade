@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  workers: 2,
+  // CI has no GPU: serialize real WebGL sessions to avoid CPU-renderer contention.
+  workers: process.env.CI ? 1 : 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
@@ -17,7 +18,14 @@ export default defineConfig({
     },
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'desktop-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Retain desktop input/layout while limiting software-rasterized pixels.
+        ...(process.env.CI ? { viewport: { width: 960, height: 540 } } : {}),
+      },
+    },
     { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {

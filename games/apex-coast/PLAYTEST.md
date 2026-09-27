@@ -41,3 +41,5 @@ A hardware-accelerated Chrome run completed a full three-lap race through the no
 The production build is approximately **808 KB on disk** before notices, with its main JavaScript bundle **699 KB minified / 186 KB gzip**, CSS approximately 20 KB / 5 KB gzip, and bundled Latin fonts. This fits the initial 1 MB source-asset delivery budget; browsers fetch their supported font format, not both fallback formats. The large-chunk advisory is expected for the single Three.js + physics runtime, not an unmeasured asset download.
 
 10 unit/integration tests and 12 browser scenarios passed locally. Two platform-specific scenarios intentionally skip the irrelevant project (keyboard case on mobile; multitouch case on desktop). The tests include the root studio deployment fixture and arcade integration.
+
+GitHub's GPU-less runner initially timed out on two concurrent desktop rendering scenarios. CI now serializes browser sessions and uses a 960×540 desktop viewport; mobile touch coverage and all behavioral assertions remain unchanged. A full local run with the same software-rendering CI configuration passed, including all 12 browser scenarios in 46 seconds.
