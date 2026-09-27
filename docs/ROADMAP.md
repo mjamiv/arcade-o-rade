@@ -8,12 +8,14 @@
 - [x] CI and GitHub Pages deployment definition
 - [x] Design, asset, playtest, and release conventions
 
-## Next: first game discovery
+## First game: Apex Coast
 
-- [ ] Mike supplies game concept, references, player goals, and constraints
-- [ ] Agree on a game brief and explicit non-goals
-- [ ] Choose a game engine and supported devices based on that brief
-- [ ] Create game workspace, milestone, and vertical-slice issues
-- [ ] Build and playtest one complete core loop
+- [x] Mike requested realistic-looking racing and physically simulated, distinct vehicles for his son
+- [x] Phone/tablet confirmed as primary target; no preferred vehicles supplied
+- [x] Three.js rendering and cannon-es suspension/rigid-body physics selected for this game
+- [x] First playable: three vehicles, coastal circuit, time trial and Free Drive
+- [x] Automated physics/race-state tests and desktop/mobile browser input checks
+- [ ] Mike and his son play-test on their actual phone/tablet
+- [ ] Agree next priorities from handling, visual-quality, and content feedback
 
-No game scope, engine, deadline, or launch promises are committed yet. Track implementation tasks in GitHub issues once requirements exist.
+See [game design](../games/apex-coast/DESIGN.md) for confirmed direction versus implementation assumptions, and [playtest notes](../games/apex-coast/PLAYTEST.md) for validation boundaries. Future games remain free to select another engine.

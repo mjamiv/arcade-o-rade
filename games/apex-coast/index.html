@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#172323" />
+    <meta
+      name="description"
+      content="Apex Coast — a scenic driving playground with three distinct vehicles, real suspension physics, and a coastal time trial. An Arcade-o-Rade original."
+    />
+    <title>Apex Coast · Arcade-o-Rade</title>
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+  </head>
+  <body>
+    <div id="scene" aria-label="3D coastal racing circuit"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <div id="loading">
+      <div class="loading-mark">A<span>/</span>C</div>
+      <p>WARMING UP THE COAST</p>
+      <div class="loading-bar"></div>
+    </div>
+    <section id="garage" class="screen hidden" aria-label="Vehicle selection">
+      <header class="garage-header">
+        <a class="brand" href="../../" aria-label="Back to Arcade-o-Rade"
+          ><span class="brand-mark">A<span>/</span>C</span
+          ><span>APEX COAST<small>AN ARCADE-O-RADE ORIGINAL</small></span></a
+        >
+        <div class="header-right">
+          <span class="edition">DRIVING EXPERIENCE / VOL. 01</span
+          ><button id="settings-open" class="icon-button" aria-label="Settings">
+            ⚙
+          </button>
+        </div>
+      </header>
+      <div class="garage-copy">
+        <p class="eyebrow"><span></span> THE ROAD IS YOURS.</p>
+        <h1>FIND YOUR<br /><em>DRIVE.</em></h1>
+        <p class="garage-intro">
+          Salt air. Open throttle. One perfect lap.<br />Meet your next favorite
+          place to drive.
+        </p>
+        <div class="location">
+          <span class="location-pin">⌖</span>
+          <div>
+            PACIFIC COAST CIRCUIT<small
+              ><span id="circuit-length">1.5</span> KM &nbsp; / &nbsp; DRY
+              ASPHALT &nbsp; / &nbsp; 24°C</small
+            >
+          </div>
+        </div>
+      </div>
+      <div class="car-label" aria-hidden="true">
+        <span>01 — ENGINEERED TO FEEL DIFFERENT</span
+        ><strong id="floating-car-name">VANTAGE GT</strong
+        ><span id="floating-drive">REAR-WHEEL DRIVE</span>
+      </div>
+      <div class="garage-bottom">
+        <div class="selection-heading">
+          <span class="eyebrow">01 / CHOOSE YOUR MACHINE</span>
+          <div id="paint-options" role="group" aria-label="Paint color"></div>
+        </div>
+        <div
+          id="vehicle-options"
+          class="vehicle-options"
+          role="group"
+          aria-label="Choose a vehicle"
+        ></div>
+        <div class="launch-row">
+          <div class="mode-options" role="group" aria-label="Driving mode">
+            <button id="mode-trial" class="mode active" aria-pressed="true">
+              TIME TRIAL <small>3 LAPS · CHASE YOUR BEST</small></button
+            ><button id="mode-practice" class="mode" aria-pressed="false">
+              FREE DRIVE <small>NO CLOCK TO BEAT</small>
+            </button>
+          </div>
+          <button id="start" class="primary">
+            DRIVE THE COAST <span>↗</span>
+          </button>
+        </div>
+        <div class="garage-footer">
+          <span>REAL SUSPENSION. DISTINCT HANDLING. PURE DRIVING.</span
+          ><button id="controls-open">VIEW CONTROLS <span>↗</span></button>
+        </div>
+      </div>
+    </section>
+    <section id="hud" class="hidden" aria-label="Driving instruments">
+      <div class="hud-top">
+        <div class="hud-logo">A<span>/</span>C<small>APEX COAST</small></div>
+        <div class="timing">
+          <div>
+            <span id="lap-label">LAP</span
+            ><strong id="lap">01 <i>/ 03</i></strong>
+          </div>
+          <div>
+            <span>LAP TIME</span><strong id="lap-time">0:00.000</strong>
+          </div>
+          <div class="best-block">
+            <span>PERSONAL BEST</span><strong id="best-time">—:——.———</strong>
+          </div>
+        </div>
+        <button
+          id="pause-button"
+          class="icon-button"
+          aria-label="Pause driving"
+        >
+          Ⅱ
+        </button>
+      </div>
+      <div id="race-message" role="status"></div>
+      <div class="map-panel">
+        <canvas
+          id="minimap"
+          width="360"
+          height="310"
+          aria-label="Circuit map and vehicle position"
+        ></canvas>
+        <div>
+          <span class="map-dot"></span> PACIFIC COAST
+          <span id="checkpoint">SECTOR 01</span>
+        </div>
+      </div>
+      <div class="speedometer">
+        <div class="tach"><div id="rpm-fill"></div></div>
+        <div class="speed-line">
+          <span id="gear">1</span><strong id="speed">000</strong
+          ><span id="units">MPH</span>
+        </div>
+        <div class="car-instrument">
+          <span id="hud-car">VANTAGE GT</span
+          ><span id="assist-status">ASSISTS ON</span>
+        </div>
+        <div class="pedals">
+          <span>THR</span>
+          <div><i id="throttle-fill"></i></div>
+          <span>BRK</span>
+          <div><i id="brake-fill"></i></div>
+        </div>
+      </div>
+      <div class="drive-hints">
+        <span><kbd>WASD</kbd> DRIVE</span><span><kbd>SPACE</kbd> HANDBRAKE</span
+        ><span><kbd>C</kbd> CAMERA</span><span><kbd>R</kbd> RECOVER</span
+        ><button id="sound-button" aria-label="Mute sound">SOUND ON</button>
+      </div>
+      <div id="touch-controls" class="touch-controls">
+        <div class="touch-steer">
+          <button data-control="left" aria-label="Steer left">‹</button
+          ><button data-control="right" aria-label="Steer right">›</button>
+        </div>
+        <div class="touch-pedals">
+          <button
+            data-control="brake"
+            class="touch-brake"
+            aria-label="Brake or reverse"
+          >
+            BRAKE<small>HOLD TO REVERSE</small></button
+          ><button
+            data-control="throttle"
+            class="touch-gas"
+            aria-label="Accelerate"
+          >
+            GAS<span>↑</span>
+          </button>
+        </div>
+        <button id="touch-camera" aria-label="Change camera">CAM</button
+        ><button id="touch-reset" aria-label="Recover vehicle">↻</button>
+      </div>
+    </section>
+    <div id="countdown" class="hidden" aria-live="assertive">
+      <span>GET READY</span><strong>3</strong>
+    </div>
+    <section
+      id="pause-screen"
+      class="modal-layer hidden"
+      aria-label="Pause menu"
+    >
+      <div class="modal">
+        <p class="eyebrow">TAKE A BREATHER</p>
+        <h2>GOOD ROADS<br />CAN WAIT.</h2>
+        <p>Your drive is paused.</p>
+        <button id="resume" class="primary">
+          BACK TO THE DRIVE <span>↗</span></button
+        ><button id="restart" class="secondary">Restart session</button
+        ><button id="pause-settings" class="secondary">
+          Settings & controls</button
+        ><button id="exit" class="text-button">Return to garage</button>
+      </div>
+    </section>
+    <section id="results" class="modal-layer hidden" aria-label="Race results">
+      <div class="modal results-modal">
+        <p class="eyebrow">THAT'S A WRAP</p>
+        <div id="medal" class="medal">✦</div>
+        <h2 id="result-title">COAST<br />CONQUERED.</h2>
+        <p id="result-subtitle">Three laps. One great drive.</p>
+        <div id="result-times"></div>
+        <p id="record-message" role="status"></p>
+        <button id="race-again" class="primary">
+          ONE MORE RUN <span>↗</span></button
+        ><button id="results-garage" class="text-button">
+          Try another machine
+        </button>
+      </div>
+    </section>
+    <dialog id="settings">
+      <button id="settings-close" class="close" aria-label="Close settings">
+        ×
+      </button>
+      <p class="eyebrow">MAKE IT YOUR DRIVE</p>
+      <h2>THE SETUP.</h2>
+      <label class="setting"
+        ><span
+          >Driving assists<small
+            >Smoother steering & traction control. New drivers: start
+            here.</small
+          ></span
+        ><input type="checkbox" id="assists" checked /></label
+      ><label class="setting"
+        ><span
+          >Graphics<small
+            >Low is best for older phones and tablets.</small
+          ></span
+        ><select id="quality">
+          <option value="auto">Balanced</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select></label
+      ><label class="setting"
+        ><span>Speed units</span
+        ><select id="unit-select">
+          <option value="mph">MPH</option>
+          <option value="kmh">KM/H</option>
+        </select></label
+      ><label class="setting"
+        ><span>Sound volume</span
+        ><input id="volume" type="range" min="0" max="100" value="45" /></label
+      ><label class="setting"
+        ><span
+          >Touch controls<small
+            >Also appear automatically on touch screens.</small
+          ></span
+        ><input type="checkbox" id="touch-toggle"
+      /></label>
+      <div class="controls-guide">
+        <h3>THE BASICS</h3>
+        <p>
+          <kbd>W / ↑</kbd> Accelerate &nbsp; <kbd>S / ↓</kbd> Brake; hold at a
+          stop to reverse
+        </p>
+        <p><kbd>A D / ← →</kbd> Steer &nbsp; <kbd>SPACE</kbd> Handbrake</p>
+        <p>
+          <kbd>C</kbd> Camera &nbsp; <kbd>R</kbd> Recover &nbsp;
+          <kbd>ESC / P</kbd> Pause
+        </p>
+        <p><kbd>M</kbd> Mute &nbsp; <kbd>F</kbd> Fullscreen</p>
+        <p>
+          Controller: left stick steers, RT accelerates, LT brakes, A
+          handbrakes, Y changes camera, B recovers, Start pauses. Press a
+          controller button to connect.
+        </p>
+        <p class="control-tip">
+          Brake before the corner. Turn smoothly. Accelerate as the road opens
+          up. Recovering invalidates your current lap.
+        </p>
+      </div>
+      <p id="save-note">
+        Best laps save in this browser, separately for each car and assist mode.
+      </p>
+      <p class="credits">
+        <a
+          href="%BASE_URL%THIRD-PARTY-NOTICES.txt"
+          target="_blank"
+          rel="noopener"
+          >Credits & licenses ↗</a
+        >
+      </p>
+    </dialog>
+    <section id="error" class="modal-layer hidden">
+      <div class="modal">
+        <h2>LET'S GET<br />YOU DRIVING.</h2>
+        <p id="error-message"></p>
+        <a class="primary" href="../../">Back to the arcade ↗</a>
+      </div>
+    </section>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

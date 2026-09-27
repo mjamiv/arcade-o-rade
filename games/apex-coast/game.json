@@ -1,0 +1,7 @@
+{
+  "slug": "apex-coast",
+  "title": "Apex Coast",
+  "description": "Three machines. One coastal circuit. A mobile-first driving experience with suspension physics, time trials, and free drive.",
+  "status": "alpha",
+  "controls": ["keyboard", "touch", "gamepad"]
+}
