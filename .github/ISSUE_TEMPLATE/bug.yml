@@ -1,0 +1,35 @@
+name: Bug / playtest finding
+description: Report a reproducible problem.
+title: '[Bug] '
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Game URL, version, browser, and device
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected vs actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - Cosmetic / polish
+        - Playable but incorrect
+        - Blocks progress
+        - Crash / lost save
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot, recording, logs, or save details (no secrets)

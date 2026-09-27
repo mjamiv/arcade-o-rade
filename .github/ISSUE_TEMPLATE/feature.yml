@@ -1,0 +1,29 @@
+name: Feature / game milestone
+description: Define a reviewable piece of work with a clear finish line.
+title: '[Feature] '
+body:
+  - type: input
+    id: game
+    attributes:
+      label: Game or studio area
+      placeholder: 'studio or games/my-game'
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Player outcome / problem
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable conditions that make this done.
+      placeholder: '- [ ] ...'
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Non-goals, dependencies, and references
