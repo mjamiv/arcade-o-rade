@@ -2,7 +2,7 @@
 
 **Three machines. One coastal circuit. Find your drive.**
 
-A mobile-first 3D racer built for phones, tablets, and desktop browsers. **Version 0.1.0 — alpha.**
+A mobile-first 3D racer built for phones, tablets, and desktop browsers. **Version 0.2.0 — alpha.**
 
 [Play Apex Coast](https://mjamiv.github.io/arcade-o-rade/games/apex-coast/) · [Design](DESIGN.md) · [Asset register](ASSETS.md) · [Playtest evidence](PLAYTEST.md)
 
@@ -18,7 +18,7 @@ Desktop: WASD/arrows drive; Space handbrakes; C changes camera; R recovers; Esca
 
 The vehicles use cannon-es rigid-body dynamics and four raycast suspension wheels, not scripted position animation. They have different masses, torque/gearing, suspension, steering, drivetrains, braking forces, drag, and grip. Tires interact with road/grass; guardrails and terrain have collision geometry. Driving assists smooth steering and reduce power during excessive lateral slip. An automatic transmission handles gears.
 
-These are fictional, game-tuned vehicles. This is **not** an engineering-validated manufacturer simulator: no Pacejka tire model, thermal simulation, deformable damage, or exact drivetrain compliance. Power figures are fictional design specifications, not measured dyno results. Graphics are original procedural 3D assets with physical materials and lighting, not photogrammetry or licensed real-car scans.
+These are fictional, game-tuned vehicles. This is **not** an engineering-validated manufacturer simulator: no Pacejka tire model, thermal simulation, deformable damage, or exact drivetrain compliance. Power figures are fictional design specifications, not measured dyno results. Vehicle geometry is original procedural 3D, with physical materials and lighting; road/ground surfaces use attributed CC0 photo textures. No licensed real-car scans are included.
 
 ## Develop
 
@@ -35,7 +35,7 @@ Root build and preview reproduce the real Pages path. `?debug` adds a read-only 
 ## Architecture
 
 - `physics.ts` / `vehicles.ts`: fixed-step 120 Hz vehicle simulation and tuning.
-- `track.ts` / `terrain.ts` / `world.ts`: track geometry, terrain, scenery, lighting.
+- `track.ts` / `terrain.ts` / `world.ts` / `scenery.ts`: track geometry, terrain, scenery, lighting.
 - `car-model.ts`: original procedural vehicle models, merged by material to limit draw calls.
 - `race.ts`: ordered checkpoint validation, lap timing, and race completion.
 - `input.ts`: simultaneous touch, keyboard, and standard gamepad inputs.

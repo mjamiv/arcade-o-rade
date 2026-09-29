@@ -1,20 +1,15 @@
 import * as THREE from 'three';
+import { createScenery } from './scenery.ts';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   terrainData,
-  terrainHeight,
   TERRAIN_STEP,
   TERRAIN_X,
   TERRAIN_Z,
   TERRAIN_CELLS,
 } from './terrain.ts';
 import { Sky } from 'three/addons/objects/Sky.js';
-import {
-  trackCurve,
-  trackPose,
-  trackLength,
-  nearestTrack,
-  TRACK_WIDTH,
-} from './track.ts';
+import { trackCurve, trackPose, trackLength, TRACK_WIDTH } from './track.ts';
 
 export interface Barrier {
   x: number;
@@ -22,14 +17,6 @@ export interface Barrier {
   length: number;
   yaw: number;
 }
-function random(seed: number) {
-  let n = seed;
-  return () => {
-    n = (n * 1664525 + 1013904223) >>> 0;
-    return n / 4294967296;
-  };
-}
-const rand = random(1948);
 function material(color: number, roughness = 0.8, metalness = 0) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
@@ -87,33 +74,52 @@ function addMesh(
   scene.add(m);
   return m;
 }
-export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
+export async function createWorld(
+  scene: THREE.Scene,
+  renderer: THREE.WebGLRenderer,
+) {
   scene.background = new THREE.Color(0xb2cbd2);
-  scene.fog = new THREE.FogExp2(0xc1d1cf, 0.00075);
+  scene.fog = new THREE.FogExp2(0xb7c5c3, 0.00105);
   const sky = new Sky();
   sky.scale.setScalar(8000);
+  // Expose the atmosphere separately from the sunlit foreground.
+  sky.material.fragmentShader = sky.material.fragmentShader.replace(
+    'gl_FragColor = vec4( texColor, 1.0 );',
+    'gl_FragColor = vec4( texColor * 0.42, 1.0 );',
+  );
   const uniforms = sky.material.uniforms;
-  uniforms.turbidity.value = 3;
-  uniforms.rayleigh.value = 1.5;
-  uniforms.mieCoefficient.value = 0.005;
+  uniforms.turbidity.value = 2;
+  uniforms.rayleigh.value = 2.4;
+  uniforms.mieCoefficient.value = 0.003;
+  uniforms.cloudCoverage.value = 0.48;
+  uniforms.cloudDensity.value = 0.65;
   uniforms.mieDirectionalG.value = 0.78;
   const sun = new THREE.Vector3().setFromSphericalCoords(
     1,
-    THREE.MathUtils.degToRad(65),
-    THREE.MathUtils.degToRad(238),
+    THREE.MathUtils.degToRad(67),
+    THREE.MathUtils.degToRad(145),
   );
   uniforms.sunPosition.value.copy(sun);
   scene.add(sky);
   const envScene = new THREE.Scene();
   const envSky = sky.clone();
   envScene.add(envSky);
+  const groundReflection = new THREE.Mesh(
+    new THREE.CircleGeometry(4000, 32),
+    new THREE.MeshBasicMaterial({ color: 0x595b43 }),
+  );
+  groundReflection.rotation.x = -Math.PI / 2;
+  groundReflection.position.y = -8;
+  envScene.add(groundReflection);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const env = pmrem.fromScene(envScene, 0.03);
   scene.environment = env.texture;
   scene.environmentIntensity = 0.18;
   pmrem.dispose();
-  scene.add(new THREE.HemisphereLight(0xc4e0fa, 0x706044, 1.1));
-  const light = new THREE.DirectionalLight(0xfff1d1, 2.7);
+  groundReflection.geometry.dispose();
+  groundReflection.material.dispose();
+  scene.add(new THREE.HemisphereLight(0xbfd9f0, 0x655437, 0.85));
+  const light = new THREE.DirectionalLight(0xffe3b3, 2.8);
   light.position.copy(sun.clone().multiplyScalar(180));
   light.castShadow = true;
   light.shadow.mapSize.set(2048, 2048);
@@ -127,43 +133,28 @@ export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
   light.shadow.normalBias = 0.035;
   scene.add(light);
   scene.add(light.target);
-  const asphalt = canvasTexture((ctx) => {
-    ctx.fillStyle = '#383d40';
-    ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 24000; i++) {
-      const v = Math.floor(40 + rand() * 65);
-      ctx.fillStyle = `rgba(${v},${v},${v},.35)`;
-      ctx.fillRect(rand() * 512, rand() * 512, 1 + rand() * 2, 1 + rand() * 2);
-    }
-    for (let i = 0; i < 15; i++) {
-      ctx.strokeStyle = '#323739';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(rand() * 512, 0);
-      ctx.bezierCurveTo(
-        rand() * 512,
-        180,
-        rand() * 512,
-        300,
-        rand() * 512,
-        512,
-      );
-      ctx.stroke();
-    }
-  });
-  asphalt.wrapS = asphalt.wrapT = THREE.RepeatWrapping;
-  asphalt.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  const grass = canvasTexture((ctx) => {
-    ctx.fillStyle = '#6f7950';
-    ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 18000; i++) {
-      ctx.fillStyle = rand() > 0.5 ? '#81845b' : '#626e46';
-      ctx.globalAlpha = 0.4;
-      ctx.fillRect(rand() * 512, rand() * 512, rand() * 6 + 1, rand() * 6 + 1);
-    }
-  });
-  grass.wrapS = grass.wrapT = THREE.RepeatWrapping;
-  grass.repeat.set(160, 160);
+  const loader = new THREE.TextureLoader();
+  const [asphalt, asphaltNormal, grass, treeTexture] = await Promise.all(
+    [
+      'asphalt-color.webp',
+      'asphalt-normal.webp',
+      'coastal-ground.webp',
+      'coastal-tree.webp',
+    ].map((name) =>
+      loader.loadAsync(`${import.meta.env.BASE_URL}textures/${name}`),
+    ),
+  );
+  for (const texture of [asphalt, asphaltNormal, grass]) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  }
+  asphalt.colorSpace =
+    grass.colorSpace =
+    treeTexture.colorSpace =
+      THREE.SRGBColorSpace;
+  asphalt.repeat.set(2, 1.2);
+  asphaltNormal.repeat.copy(asphalt.repeat);
+  grass.repeat.set(75, 75);
   const landPos: number[] = [],
     landUV: number[] = [],
     landColor: number[] = [],
@@ -176,8 +167,13 @@ export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
         TERRAIN_Z - j * TERRAIN_STEP,
       );
       landUV.push(i / TERRAIN_CELLS, j / TERRAIN_CELLS);
-      const shade = 0.86 + rand() * 0.2;
-      landColor.push(shade, shade, shade * 0.94);
+      const x = TERRAIN_X + i * TERRAIN_STEP,
+        z = TERRAIN_Z - j * TERRAIN_STEP;
+      const patch =
+        Math.sin(x * 0.033 + Math.sin(z * 0.026) * 2) *
+        Math.cos(z * 0.018 - x * 0.011);
+      const shade = 0.83 + patch * 0.17;
+      landColor.push(shade * 1.06, shade, shade * 0.85);
       if (i < TERRAIN_CELLS && j < TERRAIN_CELLS) {
         const a = i * (TERRAIN_CELLS + 1) + j,
           b = a + TERRAIN_CELLS + 1;
@@ -208,7 +204,9 @@ export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     strip(-TRACK_WIDTH / 2, TRACK_WIDTH / 2, 0.015),
     new THREE.MeshStandardMaterial({
       map: asphalt,
-      roughness: 0.94,
+      roughness: 0.86,
+      normalMap: asphaltNormal,
+      normalScale: new THREE.Vector2(0.32, 0.32),
       side: THREE.DoubleSide,
     }),
   );
@@ -264,128 +262,20 @@ export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
       scene.add(m);
     }
   const dashGeo = new THREE.PlaneGeometry(0.1, 3.6);
+  const dashParts: THREE.BufferGeometry[] = [];
   for (let i = 0; i < Math.floor(trackLength / 16); i++) {
     const p = trackPose(i / Math.floor(trackLength / 16));
-    const d = addMesh(scene, dashGeo, white, p.position.x, 0.03, p.position.z);
-    d.rotation.set(-Math.PI / 2, 0, -p.yaw);
-    d.castShadow = false;
+    const g = dashGeo.clone();
+    g.rotateX(-Math.PI / 2);
+    g.rotateY(p.yaw);
+    g.translate(p.position.x, 0.03, p.position.z);
+    dashParts.push(g);
   }
-  // Azure sea and a irregular limestone shoreline to the west.
-  const sea = addMesh(
-    scene,
-    new THREE.PlaneGeometry(6000, 6000),
-    new THREE.MeshPhysicalMaterial({
-      color: 0x3c8194,
-      roughness: 0.26,
-      metalness: 0.28,
-      clearcoat: 0.7,
-    }),
-    -2100,
-    -3.7,
-    0,
-  );
-  sea.rotation.x = -Math.PI / 2;
-  sea.castShadow = false;
-  sea.receiveShadow = false;
-  const cliffMat = material(0xaca38c);
-  for (let i = 0; i < 70; i++) {
-    const z = -1000 + i * 30;
-    const rock = addMesh(
-      scene,
-      new THREE.IcosahedronGeometry(1, 1),
-      cliffMat,
-      -385 + Math.sin(i * 0.8) * 12,
-      -3,
-      z,
-    );
-    rock.scale.set(12 + rand() * 16, 8 + rand() * 6, 18 + rand() * 18);
-    rock.rotation.set(rand(), rand(), rand());
-  }
-  // Distant ridges are intentionally low detail; nearby props receive real-time shadows.
-  const mountainMats = [
-    material(0x7b877f),
-    material(0x8a9083),
-    material(0x64746e),
-  ];
-  for (let i = 0; i < 30; i++) {
-    const angle = -Math.PI * 0.7 + rand() * Math.PI * 1.4;
-    const r = 670 + rand() * 650;
-    const x = 450 + Math.cos(angle) * r,
-      z = Math.sin(angle) * r;
-    const h = 90 + rand() * 180;
-    const g = new THREE.ConeGeometry(160 + rand() * 250, h, 28, 14);
-    const a = g.attributes.position;
-    for (let j = 0; j < a.count; j++) {
-      if (a.getY(j) < h * 0.4) {
-        const x = a.getX(j),
-          y = a.getY(j),
-          z = a.getZ(j);
-        const n =
-          Math.sin(x * 0.037 + z * 0.051 + y * 0.024) *
-          Math.cos(x * 0.016 - z * 0.024);
-        a.setX(j, x + n * 18);
-        a.setZ(j, z + n * 14);
-      }
-    }
-    g.computeVertexNormals();
-    const m = addMesh(scene, g, mountainMats[i % 3], x, h / 2 - 30, z);
-    m.rotation.y = rand() * 6;
-    m.castShadow = false;
-  }
-  const positions: THREE.Vector3[] = [];
-  for (let i = 0; i < 1800 && positions.length < 380; i++) {
-    const x = -335 + rand() * 980,
-      z = -550 + rand() * 1100;
-    if (nearestTrack(x, z).distance < 17 || Math.hypot(x - 25, z - 230) < 32)
-      continue;
-    positions.push(new THREE.Vector3(x, terrainHeight(x, z), z));
-  }
-  const trunk = new THREE.InstancedMesh(
-    new THREE.CylinderGeometry(0.17, 0.32, 3.8, 6),
-    material(0x716451),
-    positions.length,
-  );
-  const pineGeo = new THREE.ConeGeometry(2.3, 7, 16, 9);
-  const pinePos = pineGeo.attributes.position;
-  for (let i = 0; i < pinePos.count; i++) {
-    const factor =
-      0.9 +
-      0.16 *
-        Math.sin(
-          pinePos.getX(i) * 9 + pinePos.getZ(i) * 7 + pinePos.getY(i) * 3,
-        );
-    pinePos.setX(i, pinePos.getX(i) * factor);
-    pinePos.setZ(i, pinePos.getZ(i) * factor);
-  }
-  pineGeo.computeVertexNormals();
-  const foliage = new THREE.InstancedMesh(
-    pineGeo,
-    material(0x263e2d),
-    positions.length * 2,
-  );
-  const dummy = new THREE.Object3D();
-  positions.forEach((p, i) => {
-    const s = 0.7 + rand() * 0.8;
-    dummy.position.copy(p).add(new THREE.Vector3(0, 1.9 * s, 0));
-    dummy.scale.setScalar(s);
-    dummy.rotation.y = rand() * 6;
-    dummy.updateMatrix();
-    trunk.setMatrixAt(i, dummy.matrix);
-    for (let j = 0; j < 2; j++) {
-      dummy.position.copy(p).add(new THREE.Vector3(0, (5 + j * 2) * s, 0));
-      dummy.scale.set(
-        s * (1 - j * 0.23),
-        s * (1 - j * 0.1),
-        s * (1 - j * 0.23),
-      );
-      dummy.updateMatrix();
-      foliage.setMatrixAt(i * 2 + j, dummy.matrix);
-    }
-  });
-  trunk.castShadow = true;
-  foliage.castShadow = true;
-  foliage.receiveShadow = true;
-  scene.add(trunk, foliage);
+  dashGeo.dispose();
+  const dashedRoad = addMesh(scene, mergeGeometries(dashParts)!, white);
+  dashedRoad.castShadow = false;
+  dashParts.forEach((g) => g.dispose());
+  const scenery = createScenery(scene, grass, treeTexture);
   const barriers: Barrier[] = [];
   const railMat = material(0x929b9a, 0.36, 0.65),
     posts = material(0x646a64, 0.6, 0.5);
@@ -471,19 +361,27 @@ export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     );
     if (sign < 0) panel.rotation.y = Math.PI;
   }
+  const checkerParts: THREE.BufferGeometry[][] = [[], []];
   for (let row = 0; row < 2; row++)
     for (let col = 0; col < 20; col++) {
-      const tile = addMesh(
-        gantry,
-        new THREE.PlaneGeometry(TRACK_WIDTH / 20, 0.52),
-        material((col + row) % 2 ? 0xf3f0df : 0x24282a),
+      const g = new THREE.PlaneGeometry(TRACK_WIDTH / 20, 0.52);
+      g.rotateX(-Math.PI / 2);
+      g.translate(
         ((col + 0.5) * TRACK_WIDTH) / 20 - TRACK_WIDTH / 2,
         0.033,
         (row - 0.5) * 0.52,
       );
-      tile.rotation.x = -Math.PI / 2;
-      tile.castShadow = false;
+      checkerParts[(col + row) % 2].push(g);
     }
+  checkerParts.forEach((parts, i) => {
+    const m = addMesh(
+      gantry,
+      mergeGeometries(parts)!,
+      material(i ? 0xf3f0df : 0x24282a),
+    );
+    m.castShadow = false;
+    parts.forEach((g) => g.dispose());
+  });
   for (let i = 0; i < 5; i++) {
     const p = trackPose(0.04 + i * 0.195);
     const side = i % 2 ? 1 : -1;
@@ -574,7 +472,19 @@ export function createWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     );
   addMesh(gate, new THREE.BoxGeometry(11.6, 0.07, 0.07), gateMat, 0, 3.4, 0);
   scene.add(gate);
-  return { light, sun, barriers, gate, trackLength, sea, trackCurve };
+  return {
+    light,
+    sun,
+    barriers,
+    gate,
+    trackLength,
+    ...scenery,
+    update: (time: number) => {
+      scenery.update(time);
+      uniforms.time.value = time;
+    },
+    trackCurve,
+  };
 }
 function chromeMaterial() {
   return material(0xb1b7b3, 0.5, 0.7);
