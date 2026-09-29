@@ -20,7 +20,7 @@ This is a game-tuned simulation, not an engineering-validated reproduction of ma
 
 ## Visual and audio direction
 
-Coastal afternoon, sunlit mountains, ocean, physically based vehicle materials, detailed original procedural car models, shadows, roadside vegetation and circuit furniture. Garage-style vehicle selection and restrained motorsport HUD. Procedural engine audio responds to RPM/load; tire scrub responds to slip; all sound user-initiated and mutable.
+Coastal afternoon, continuous sunlit ridges, animated ocean/clouds, physically based vehicle materials, original procedural car models with framed glazing and open arches, shadows, leafy roadside vegetation and circuit furniture. CC0 photographic asphalt/ground surface maps add detail; they are compressed and self-hosted. Garage-style vehicle selection and restrained motorsport HUD. Procedural engine audio responds to RPM/load; tire scrub responds to slip; all sound user-initiated and mutable.
 
 ## First-version acceptance criteria
 
@@ -34,7 +34,7 @@ Coastal afternoon, sunlit mountains, ocean, physically based vehicle materials, 
 
 ## Performance targets and limitations
 
-Primary target: phones and tablets, aiming for 30 FPS with adaptive resolution and low/balanced graphics. Desktop target 60 FPS on the local Apple M4. Actual phones/tablets still need device playtests. Shadows and pixel ratio selectable. Modern WebGL2 required; unsupported devices get a clear message rather than a blank page. Chromium desktop/mobile emulation is the initial tested matrix; Safari, Firefox, and physical controller coverage must be reported honestly.
+Primary target: phones and tablets, aiming for 30 FPS with adaptive resolution and low/balanced graphics. Desktop target 60 FPS on the local Apple M4. The graphics pass allows up to 2 MB of uncompressed built output (including code/fonts/textures); this supersedes the initial 1 MB source-asset target. No heavy post-processing or realtime reflection render targets. Actual phones/tablets still need device playtests. Shadows and pixel ratio selectable. Modern WebGL2 required; unsupported devices get a clear message rather than a blank page. Chromium desktop/mobile emulation is the initial tested matrix; Safari, Firefox, and physical controller coverage must be reported honestly.
 
 ## Deferred
 

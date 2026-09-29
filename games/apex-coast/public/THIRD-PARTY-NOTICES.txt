@@ -152,3 +152,18 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+
+SURFACE TEXTURES
+Asphalt 02 and Aerial Grass Rock, by Rob Tuytel / Poly Haven.
+CC0 1.0 Universal Public Domain Dedication.
+https://creativecommons.org/publicdomain/zero/1.0/
+https://polyhaven.com/a/asphalt_02
+https://polyhaven.com/a/aerial_grass_rock
+Optimized WebP derivatives; provenance in textures/SOURCES.md.
+
+FOLIAGE BAKE
+Tree Small 02, by Rico Cilliers / Poly Haven. CC0 1.0 Universal.
+https://polyhaven.com/a/tree_small_02
+Rendered as a small tree cutout; source model is not shipped.
+https://creativecommons.org/publicdomain/zero/1.0/

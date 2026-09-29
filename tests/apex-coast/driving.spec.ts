@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 type Telemetry = {
   phase: string;
+  progress: number;
   speed: number;
   position: { x: number; y: number; z: number };
   countdown: number;
@@ -42,6 +43,9 @@ test('choose a vehicle, drive with physical motion, pause, resume, and recover',
   test.setTimeout(90000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
   await openGame(page);
   await page.getByRole('button', { name: 'Select SUMMIT X' }).click();
   expect((await telemetry(page)).vehicle).toBe('summit');
@@ -67,6 +71,13 @@ test('choose a vehicle, drive with physical motion, pause, resume, and recover',
   expect((await telemetry(page)).valid).toBe(false);
   await page.keyboard.press('KeyC');
   await expect(page.locator('#race-message')).toContainText('HOOD CAMERA');
+  await page.getByRole('button', { name: 'Pause driving' }).click();
+  await page.locator('#exit').click();
+  await expect(page.locator('#garage')).toBeVisible();
+  expect((await telemetry(page)).phase).toBe('garage');
+  // Returning from a recovery must refresh road proximity at the garage spawn.
+  // Stale track state previously hid the contact shadow after an off-road exit.
+  expect((await telemetry(page)).progress).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -78,6 +89,9 @@ test('phone controls accelerate and steer simultaneously, release safely, and su
   test.setTimeout(90000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
   await openGame(page);
   await start(page);
   const gas = (await page

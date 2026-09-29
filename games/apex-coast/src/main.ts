@@ -71,7 +71,7 @@ async function boot() {
     0.12,
     6000,
   );
-  const world = createWorld(scene, renderer);
+  const world = await createWorld(scene, renderer);
   const controls = new Controls();
   const sound = new EngineAudio();
   sound.volume = save.volume / 100;
@@ -179,11 +179,18 @@ async function boot() {
         el.classList.toggle('active', i === index);
         el.setAttribute('aria-pressed', String(i === index));
       });
-    syncCar();
+    syncCar(true);
     updateCamera(1, true);
     persist();
   }
-  function syncCar() {
+  function syncCar(refreshTrack = false) {
+    // Resets and garage transitions move the chassis outside the physics loop.
+    // Refresh road proximity before placing the contact shadow and drawing the HUD.
+    if (refreshTrack)
+      trackInfo = nearestTrack(
+        physics.body.position.x,
+        physics.body.position.z,
+      );
     car.body.position.copy(physics.body.position);
     car.body.quaternion.copy(physics.body.quaternion);
     for (let i = 0; i < 4; i++) {
@@ -348,7 +355,7 @@ async function boot() {
         : 'Three laps. Brake early, steer smoothly.',
       5,
     );
-    syncCar();
+    syncCar(true);
     updateCamera(1, true);
     updateHUD();
   }
@@ -377,6 +384,7 @@ async function boot() {
   }
   function garage() {
     phase = 'garage';
+    lastBrake = 0;
     sound.update(physics.rpm, 0, 0, false);
     controls.clear();
     settings.close();
@@ -390,7 +398,7 @@ async function boot() {
     physics.reset(0);
     for (let i = 0; i < 120; i++)
       physics.update({ ...emptyInput, brake: 1, allowReverse: false }, 1 / 120);
-    syncCar();
+    syncCar(true);
     updateCamera(1, true);
     $('start').focus();
   }
@@ -402,7 +410,7 @@ async function boot() {
     race.resetLap(recoveryProgress);
     autoRecoverTime = 0;
     message('Back on track. This lap will not count for a record.', 5);
-    syncCar();
+    syncCar(true);
     updateCamera(1, true);
   }
   function finish() {
@@ -722,6 +730,15 @@ async function boot() {
       physics.slip,
       phase === 'driving',
     );
+    world.update(garageTime);
+    world.shadow.position.set(
+      physics.body.position.x,
+      0.026,
+      physics.body.position.z,
+    );
+    world.shadow.rotation.z = -Math.atan2(-forward.x, -forward.z);
+    world.shadow.visible =
+      physics.body.position.y < 1.4 && trackInfo.distance < TRACK_WIDTH / 2;
     renderer.render(scene, camera);
   }
   requestAnimationFrame(frame);
