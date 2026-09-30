@@ -3,11 +3,14 @@ import { createScenery } from './scenery.ts';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   terrainData,
+  terrainHeight,
   TERRAIN_STEP,
   TERRAIN_X,
   TERRAIN_Z,
   TERRAIN_CELLS,
 } from './terrain.ts';
+import { rails, kerbs, pitWall } from './circuit.ts';
+import { createFacilities } from './trackside.ts';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { trackCurve, trackPose, trackLength, TRACK_WIDTH } from './track.ts';
 
@@ -33,23 +36,24 @@ function canvasTexture(
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
-function strip(inner: number, outer: number, y: number, steps = 600) {
+function strip(inner: number, outer: number, y: number, steps = 1200) {
   const pos: number[] = [],
     uv: number[] = [],
     indices: number[] = [];
+  const lanes = Math.max(1, Math.ceil(Math.abs(outer - inner) / 1.5));
   for (let i = 0; i <= steps; i++) {
     const p = trackPose(i / steps);
-    for (const offset of [inner, outer]) {
-      pos.push(
-        p.position.x + p.right.x * offset,
-        y,
-        p.position.z + p.right.z * offset,
-      );
-      uv.push(offset === inner ? 0 : 1, ((i / steps) * trackLength) / 8);
-    }
-    if (i < steps) {
-      const a = i * 2;
-      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+    for (let j = 0; j <= lanes; j++) {
+      const offset = inner + ((outer - inner) * j) / lanes;
+      const x = p.position.x + p.right.x * offset,
+        z = p.position.z + p.right.z * offset;
+      pos.push(x, terrainHeight(x, z) + y, z);
+      uv.push(j / lanes, ((i / steps) * trackLength) / 8);
+      if (i < steps && j < lanes) {
+        const a = i * (lanes + 1) + j,
+          b = a + lanes + 1;
+        indices.push(a, b, a + 1, a + 1, b, b + 1);
+      }
     }
   }
   const g = new THREE.BufferGeometry();
@@ -201,7 +205,7 @@ export async function createWorld(
   land.castShadow = false;
   const road = addMesh(
     scene,
-    strip(-TRACK_WIDTH / 2, TRACK_WIDTH / 2, 0.015),
+    strip(-TRACK_WIDTH / 2, TRACK_WIDTH / 2, 0.035),
     new THREE.MeshStandardMaterial({
       map: asphalt,
       roughness: 0.86,
@@ -211,28 +215,48 @@ export async function createWorld(
     }),
   );
   road.castShadow = false;
-  const shoulder = material(0xada28c);
+  const gravel = canvasTexture((ctx) => {
+    ctx.fillStyle = '#a29b88';
+    ctx.fillRect(0, 0, 512, 512);
+    let seed = 7261;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+    for (let i = 0; i < 16000; i++) {
+      const shade = Math.floor(105 + random() * 95);
+      ctx.fillStyle = `rgb(${shade},${shade - 5},${shade - 17})`;
+      ctx.fillRect(
+        random() * 512,
+        random() * 512,
+        1 + random() * 3,
+        1 + random() * 2,
+      );
+    }
+  });
+  gravel.wrapS = gravel.wrapT = THREE.RepeatWrapping;
+  gravel.repeat.set(2, 4);
+  gravel.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  const shoulder = new THREE.MeshStandardMaterial({
+    map: gravel,
+    roughness: 1,
+    side: THREE.DoubleSide,
+  });
   for (const side of [-1, 1]) {
     const m = addMesh(
       scene,
-      strip((side * TRACK_WIDTH) / 2, side * (TRACK_WIDTH / 2 + 1.3), 0.012),
+      strip((side * TRACK_WIDTH) / 2, side * (TRACK_WIDTH / 2 + 5), 0.012),
       shoulder,
     );
-    m.material = new THREE.MeshStandardMaterial({
-      color: 0xaaa08a,
-      side: THREE.DoubleSide,
-      roughness: 1,
-    });
     m.castShadow = false;
   }
-  const white = material(0xdddcd0);
   for (const side of [-1, 1]) {
     const m = addMesh(
       scene,
       strip(
         side * (TRACK_WIDTH / 2 - 0.18),
         side * (TRACK_WIDTH / 2 - 0.03),
-        0.028,
+        0.055,
       ),
       new THREE.MeshStandardMaterial({
         color: 0xd8d8ce,
@@ -241,77 +265,79 @@ export async function createWorld(
     );
     m.castShadow = false;
   }
-  // Alternating curbing follows the entire circuit; instanced for inexpensive detail.
-  const kerbGeo = new THREE.BoxGeometry(0.7, 0.1, trackLength / 430 + 0.04),
-    kerbMats = [material(0xe6e4d8), material(0xa64336)];
-  for (const side of [-1, 1])
-    for (let color = 0; color < 2; color++) {
-      const m = new THREE.InstancedMesh(kerbGeo, kerbMats[color], 215);
-      const o = new THREE.Object3D();
-      for (let j = 0; j < 215; j++) {
-        const p = trackPose((j * 2 + color) / 430);
-        o.position
-          .copy(p.position)
-          .addScaledVector(p.right, side * (TRACK_WIDTH / 2 + 0.32));
-        o.position.y = 0.04;
-        o.rotation.y = p.yaw;
-        o.updateMatrix();
-        m.setMatrixAt(j, o.matrix);
-      }
-      m.receiveShadow = true;
-      scene.add(m);
-    }
-  const dashGeo = new THREE.PlaneGeometry(0.1, 3.6);
-  const dashParts: THREE.BufferGeometry[] = [];
-  for (let i = 0; i < Math.floor(trackLength / 16); i++) {
-    const p = trackPose(i / Math.floor(trackLength / 16));
-    const g = dashGeo.clone();
-    g.rotateX(-Math.PI / 2);
-    g.rotateY(p.yaw);
-    g.translate(p.position.x, 0.03, p.position.z);
-    dashParts.push(g);
-  }
-  dashGeo.dispose();
-  const dashedRoad = addMesh(scene, mergeGeometries(dashParts)!, white);
-  dashedRoad.castShadow = false;
-  dashParts.forEach((g) => g.dispose());
-  const scenery = createScenery(scene, grass, treeTexture);
-  const barriers: Barrier[] = [];
-  const railMat = material(0x929b9a, 0.36, 0.65),
-    posts = material(0x646a64, 0.6, 0.5);
-  const railLength = trackLength / 230 + 0.25;
-  const railTransforms: THREE.Matrix4[] = [],
-    postTransforms: THREE.Matrix4[] = [];
-  for (let side = -1; side <= 1; side += 2) {
-    for (let i = 0; i < 230; i++) {
-      const t = i / 230;
-      if (t > 0.95 || t < 0.035) continue;
-      const p = trackPose(t);
-      const offset = TRACK_WIDTH / 2 + 3.0;
-      const point = p.position.clone().addScaledVector(p.right, side * offset);
-      const o = new THREE.Object3D();
-      o.position.set(point.x, 0.72, point.z);
-      o.rotation.y = p.yaw;
+  // Purpose-built circuit: apex kerbs, generous runoff, and no highway center dashes.
+  const o = new THREE.Object3D();
+  for (let color = 0; color < 2; color++) {
+    const selected = kerbs.filter((_, i) => Math.floor(i / 2) % 2 === color);
+    const m = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      material(color ? 0xa64336 : 0xe6e4d8),
+      selected.length,
+    );
+    selected.forEach((k, i) => {
+      o.position.set(k.x, k.y, k.z);
+      o.rotation.set(k.pitch, k.yaw, 0, 'YXZ');
+      o.scale.set(k.width, k.height, k.length);
       o.updateMatrix();
-      railTransforms.push(o.matrix.clone());
-      if (i % 2 === 0) {
-        o.position.y = 0.39;
-        o.updateMatrix();
-        postTransforms.push(o.matrix.clone());
-      }
-      barriers.push({ x: point.x, z: point.z, length: railLength, yaw: p.yaw });
-    }
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.receiveShadow = true;
+    scene.add(m);
   }
-  for (const [geo, mat, transforms] of [
-    [new THREE.BoxGeometry(0.12, 0.32, railLength), railMat, railTransforms],
-    [new THREE.BoxGeometry(0.13, 0.85, 0.14), posts, postTransforms],
-  ] as const) {
-    const instanced = new THREE.InstancedMesh(geo, mat, transforms.length);
-    transforms.forEach((m, i) => instanced.setMatrixAt(i, m));
-    instanced.castShadow = true;
-    instanced.receiveShadow = true;
-    scene.add(instanced);
+  const rubber = addMesh(
+    scene,
+    strip(-1.4, 1.4, 0.045),
+    new THREE.MeshStandardMaterial({
+      color: 0x202522,
+      transparent: true,
+      opacity: 0.13,
+      depthWrite: false,
+      roughness: 0.95,
+      side: THREE.DoubleSide,
+    }),
+  );
+  rubber.castShadow = false;
+  const scenery = createScenery(scene, grass, treeTexture);
+  const railMat = material(0x929b9a, 0.36, 0.65);
+  for (const level of [0.25, 0.75]) {
+    const m = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      railMat,
+      rails.length,
+    );
+    rails.forEach((r, i) => {
+      o.position.set(r.x, r.y - 0.6 + level, r.z);
+      o.rotation.set(r.pitch, r.yaw, 0, 'YXZ');
+      o.scale.set(0.2, 0.25, r.length);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.castShadow = m.receiveShadow = true;
+    scene.add(m);
   }
+  const posts = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.14, 1.15, 0.14),
+    railMat,
+    rails.length,
+  );
+  rails.forEach((r, i) => {
+    o.position.set(r.x, r.y - 0.05, r.z);
+    o.rotation.set(0, r.yaw, 0);
+    o.scale.set(1, 1, 1);
+    o.updateMatrix();
+    posts.setMatrixAt(i, o.matrix);
+  });
+  posts.castShadow = true;
+  scene.add(posts);
+  addMesh(
+    scene,
+    new THREE.BoxGeometry(pitWall.width, pitWall.height, pitWall.length),
+    material(0xbabbb2),
+    pitWall.x,
+    pitWall.y,
+    pitWall.z,
+  );
+  createFacilities(scene);
   const signTexture = (text: string, dark = false) =>
     canvasTexture(
       (ctx) => {
@@ -382,78 +408,6 @@ export async function createWorld(
     m.castShadow = false;
     parts.forEach((g) => g.dispose());
   });
-  for (let i = 0; i < 5; i++) {
-    const p = trackPose(0.04 + i * 0.195);
-    const side = i % 2 ? 1 : -1;
-    const point = p.position.clone().addScaledVector(p.right, side * 12);
-    const sign = addMesh(
-      scene,
-      new THREE.PlaneGeometry(4.2, 1.1),
-      new THREE.MeshStandardMaterial({
-        map: signTexture(
-          [
-            'BRAKE EARLY',
-            'FIND YOUR LINE',
-            'APEX MOTOR CLUB',
-            'SMOOTH IS FAST',
-            'ENJOY THE DRIVE',
-          ][i],
-        ),
-        side: THREE.DoubleSide,
-      }),
-      point.x,
-      1.6,
-      point.z,
-    );
-    sign.rotation.y = p.yaw + Math.PI / 2;
-  }
-  // Trackside paddock and flags beside the start area.
-  for (let i = 0; i < 5; i++) {
-    const p = trackPose(0.97 + i * 0.006);
-    const pos = p.position.clone().addScaledVector(p.right, 19);
-    const stand = addMesh(
-      scene,
-      new THREE.BoxGeometry(5, 2.4, 4),
-      material(0xd5d0be),
-      pos.x,
-      1.2,
-      pos.z,
-    );
-    stand.rotation.y = p.yaw;
-    const roof = addMesh(
-      scene,
-      new THREE.BoxGeometry(5.5, 0.15, 4.8),
-      dark,
-      pos.x,
-      2.5,
-      pos.z,
-    );
-    roof.rotation.y = p.yaw;
-  }
-  for (let i = 0; i < 8; i++) {
-    const p = trackPose(0.018 + i * 0.008);
-    const pos = p.position.clone().addScaledVector(p.right, 11.5);
-    addMesh(
-      scene,
-      new THREE.CylinderGeometry(0.035, 0.05, 6, 6),
-      chromeMaterial(),
-      pos.x,
-      3,
-      pos.z,
-    );
-    const flag = addMesh(
-      scene,
-      new THREE.PlaneGeometry(1.1, 3.1),
-      new THREE.MeshStandardMaterial({
-        color: i % 2 ? 0xe65f32 : 0xebdfbd,
-        side: THREE.DoubleSide,
-      }),
-      pos.x + 0.55,
-      4.1,
-      pos.z,
-    );
-    flag.rotation.y = p.yaw;
-  }
   const gate = new THREE.Group();
   const gateMat = new THREE.MeshBasicMaterial({
     color: 0x8be4b4,
@@ -475,7 +429,6 @@ export async function createWorld(
   return {
     light,
     sun,
-    barriers,
     gate,
     trackLength,
     ...scenery,
@@ -485,7 +438,4 @@ export async function createWorld(
     },
     trackCurve,
   };
-}
-function chromeMaterial() {
-  return material(0xb1b7b3, 0.5, 0.7);
 }

@@ -54,3 +54,27 @@ GitHub's GPU-less runner initially timed out on two concurrent desktop rendering
 - Refreshed road proximity on resets/garage transitions, preventing stale contact-shadow visibility; returning to the garage also clears brake-light state. Added browser regression coverage for garage road-position state after recovery.
 - Full quality gate: 10 unit/integration tests and 12 browser scenarios, with two intentional platform skips. Physics, lap validation, saved records, and release status remain unchanged.
 - Physical iPhone/iPad/Android, Safari/Firefox, and hardware controller verification remain outstanding. This branch is review-ready, not evidence of a new live deployment.
+
+## 0.3.0 club circuit & dynamics — September 29, 2026
+
+### Course and handling
+
+- New course measured at 1,779.64 m, with approximately 24 m of elevation and a maximum centerline grade around 10%. Road surfaces use the same heightfield triangle interpolation as wheel collisions. Kerbs and the pit wall are physical obstacles.
+- All three cars completed valid three-lap runs in the actual physics engine, with the new guardrails and kerbs active. The test controller only sends steering and pedals; no position or checkpoint mutation. Increased the simulation budget for the longer course (450 s, previously 330 s).
+- Tests verify four-wheel contact and collision/visual height agreement at six climb/descent positions, per-wheel mixed-surface grip, raised kerb collision, sector sums/deltas and invalidation, advisory braking, and preservation/isolation of old/new records.
+- Controlled dry-road braking test from 100 km/h: GT approximately 30.35 m, rally 32.29 m, pickup 38.43 m. These are game-model measurements, not manufacturer specifications or real-car validation.
+
+### Browser and rendering
+
+- Inspected desktop garage/driving and touch portrait/landscape screenshots on Chrome/Metal (Apple M4). Simultaneous steering/throttle, release, pause/resume, camera/recovery, and rotation exercised. Landscape timing-panel spacing was tightened after inspection to avoid sector-strip overlap.
+- Inspected on-track summit and downhill screenshots during a full physically driven browser lap through the standard-gamepad input adapter. Climbing/descending stays grounded; sector 1 recorded 46.05 s in that run. Virtual gamepad only; no physical controller certification.
+- Observed approximately 59–75 FPS in desktop samples and 56–75 FPS in desktop-host mobile emulation; course screenshots around 432–434k rendered triangles, with draw calls varying by view. Not a phone benchmark. Physical phone/tablet and Safari/Firefox checks remain outstanding.
+- Fixed-budget skid-mark ring buffer (1,024 segments), one draw call, no unbounded trail growth. Nearby static collision activation uses an 80 m margin plus obstacle radius and refreshes every 0.2 s; it is independent of camera visibility.
+- Built game approximately 1.62 MB including textures/fonts/notices. Main JS 721.21 KB minified / 193.53 KB gzip; CSS 21.68 KB. Still within the 2 MB built-output budget.
+- `npm run check` passed: 16 unit/integration tests and 12 browser scenarios (2 intentional platform skips), formatting, lint, types, production nested-path build. Browser coverage includes assisted corner/sector/surface HUD and hidden guidance in unassisted Free Drive.
+
+### Scope and save compatibility
+
+- Alpha status retained. No AI rivals, weather, pit-service simulation, or fully rotational tire/ABS model was added.
+- The existing version-1 save and settings remain readable. New records are keyed under `club-v1`; prior flat-course records stay stored but are not compared to the new track. Sector bests last for the session only.
+- Prepared as a follow-up to the coastal graphics branch. Review/CI status is recorded on the pull request; these local results do not imply deployment.

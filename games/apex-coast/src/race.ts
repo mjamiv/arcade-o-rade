@@ -10,6 +10,12 @@ export class RaceState {
   valid = true;
   finished = false;
   checkpointCount = 16;
+  sector = 0;
+  sectorStart = 0;
+  sectors: number[] = [];
+  bestSectors = [Infinity, Infinity, Infinity];
+  lastSector: { index: number; time: number; delta: number | null } | null =
+    null;
   previousProgress = 0;
   distance = 0;
   constructor(mode: RaceMode) {
@@ -18,6 +24,22 @@ export class RaceState {
   resetLap(progress: number) {
     this.valid = false;
     this.previousProgress = progress;
+  }
+  private completeSector() {
+    const time = this.valid ? this.lapTime - this.sectorStart : Infinity;
+    const previous = this.bestSectors[this.sector];
+    this.lastSector = {
+      index: this.sector,
+      time,
+      delta:
+        Number.isFinite(previous) && Number.isFinite(time)
+          ? time - previous
+          : null,
+    };
+    this.sectors.push(time);
+    if (time < previous) this.bestSectors[this.sector] = time;
+    this.sectorStart = this.lapTime;
+    this.sector++;
   }
   update(dt: number, progress: number, onTrack: boolean) {
     if (this.finished) return false;
@@ -35,16 +57,24 @@ export class RaceState {
         this.nextCheckpoint < this.checkpointCount
           ? previous < target && progress >= target
           : previous > 0.9 && progress < 0.1;
-      if (crossed) this.nextCheckpoint++;
+      if (crossed) {
+        if (this.nextCheckpoint === 6 || this.nextCheckpoint === 11)
+          this.completeSector();
+        this.nextCheckpoint++;
+      }
       this.distance += delta;
     }
     this.previousProgress = progress;
     if (this.nextCheckpoint > this.checkpointCount) {
       // Always require every gate and almost a full forward circuit.
       if (this.distance < 0.9) this.valid = false;
+      this.completeSector();
       this.times.push(this.valid ? this.lapTime : Infinity);
       this.lap++;
       this.lapTime = 0;
+      this.sector = 0;
+      this.sectorStart = 0;
+      this.sectors = [];
       this.nextCheckpoint = 1;
       this.distance = 0;
       this.valid = true;

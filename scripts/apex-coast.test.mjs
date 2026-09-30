@@ -3,12 +3,17 @@ import assert from 'node:assert/strict';
 import * as CANNON from 'cannon-es';
 import { DrivingPhysics } from '../games/apex-coast/src/physics.ts';
 import { VEHICLES } from '../games/apex-coast/src/vehicles.ts';
+import { terrainHeight } from '../games/apex-coast/src/terrain.ts';
+import { drivingAdvice } from '../games/apex-coast/src/driving-advice.ts';
+import { kerbs } from '../games/apex-coast/src/circuit.ts';
 import { RaceState } from '../games/apex-coast/src/race.ts';
 import { parseSave } from '../games/apex-coast/src/save.ts';
 import {
   nearestTrack,
   trackLength,
   trackPose,
+  TRACK_ID,
+  surfaceAt,
 } from '../games/apex-coast/src/track.ts';
 
 const idle = { throttle: 0, brake: 0, steer: 0, handbrake: false };
@@ -82,7 +87,7 @@ test('every vehicle can physically complete a valid three-lap race using only st
     race.previousProgress = 0.003;
     step(p, 1, { ...idle, brake: 1, allowReverse: false });
     let maxDistance = 0;
-    for (let i = 0; i < 120 * 330 && !race.finished; i++) {
+    for (let i = 0; i < 120 * 450 && !race.finished; i++) {
       const n = nearestTrack(p.body.position.x, p.body.position.z);
       maxDistance = Math.max(maxDistance, n.distance);
       const ahead = trackPose(
@@ -158,4 +163,122 @@ test('save parsing tolerates corruption and rejects impossible values', () => {
   assert.equal(saved.volume, 100);
   assert.deepEqual(saved.bests, { 'summit-unassisted': 90 });
   assert.equal(saved.assists, false);
+});
+
+test('graded track collision height matches wheel rays on climbs and descents', () => {
+  const p = new DrivingPhysics(VEHICLES[0]);
+  let maxHeight = 0;
+  for (const progress of [0.18, 0.27, 0.34, 0.43, 0.57, 0.72]) {
+    p.reset(progress);
+    step(p, 1.5, { ...idle, brake: 1, allowReverse: false });
+    assert.equal(p.vehicle.numWheelsOnGround, 4, `contacts at ${progress}`);
+    for (const wheel of p.vehicle.wheelInfos) {
+      const hit = wheel.raycastResult.hitPointWorld;
+      assert.ok(Math.abs(hit.y - terrainHeight(hit.x, hit.z)) < 0.002);
+    }
+    maxHeight = Math.max(maxHeight, p.body.position.y);
+    assert.ok(
+      p.body.position.y - terrainHeight(p.body.position.x, p.body.position.z) <
+        1,
+    );
+  }
+  assert.ok(maxHeight > 23);
+});
+
+test('braking from 100 km/h respects grip limits and vehicle differences', () => {
+  const distances = [];
+  for (const spec of VEHICLES) {
+    const p = new DrivingPhysics(spec);
+    step(p, 1, { ...idle, brake: 1, allowReverse: false });
+    p.body.velocity.set(0, 0, -27.78);
+    let distance = 0;
+    for (let i = 0; i < 120 * 8; i++) {
+      const before = p.body.position.clone();
+      p.update({ ...idle, brake: 1, allowReverse: false }, 1 / 120);
+      distance += before.distanceTo(p.body.position);
+      if (p.speed < 0.5) break;
+    }
+    assert.ok(p.speed < 0.5);
+    assert.ok(distance > 27 && distance < 50, `${spec.id}: ${distance}m`);
+    distances.push(distance);
+  }
+  assert.ok(
+    distances[2] > distances[0] + 5,
+    'truck needs more braking distance',
+  );
+});
+
+test('each tire gets its own surface grip and kerbs have collision geometry', () => {
+  const p = new DrivingPhysics(VEHICLES[0]);
+  p.body.position.x = -6.4;
+  step(p, 0.5, { ...idle, brake: 1, allowReverse: false });
+  assert.equal(p.wheelSurfaces[0], 'RUNOFF');
+  assert.equal(p.wheelSurfaces[1], 'ASPHALT');
+  assert.ok(
+    p.vehicle.wheelInfos[0].frictionSlip < p.vehicle.wheelInfos[1].frictionSlip,
+  );
+  assert.equal(surfaceAt(21, 180), 'PIT LANE');
+  assert.equal(surfaceAt(-30, 180), 'GRASS');
+  const curb = kerbs[Math.floor(kerbs.length / 3)];
+  const pose = nearestTrack(curb.x, curb.z);
+  p.reset(pose.progress);
+  p.body.position.set(curb.x, curb.y + 2, curb.z);
+  p.update(idle, 1 / 120);
+  const ray = new CANNON.RaycastResult();
+  assert.equal(
+    p.world.raycastClosest(
+      new CANNON.Vec3(curb.x, curb.y + 0.5, curb.z),
+      new CANNON.Vec3(curb.x, curb.y - 0.5, curb.z),
+      {},
+      ray,
+    ),
+    true,
+  );
+  assert.ok(ray.hitPointWorld.y > terrainHeight(curb.x, curb.z) + 0.05);
+});
+
+test('sector splits sum to lap time, compare session bests, and reject recovery sectors', () => {
+  const race = new RaceState('practice');
+  for (let lap = 0; lap < 2; lap++) {
+    for (let i = 1; i <= 1600; i++)
+      race.update(lap === 0 ? 0.1 : 0.09, (i % 1600) / 1600, true);
+    assert.equal(race.lap, lap + 2);
+    assert.ok(
+      Math.abs(race.bestSectors.reduce((a, b) => a + b, 0) - race.times[lap]) <
+        0.001,
+    );
+  }
+  assert.ok(race.lastSector.delta < 0);
+  const bests = [...race.bestSectors];
+  race.resetLap(0);
+  for (let i = 1; i <= 1600; i++) race.update(0.01, (i % 1600) / 1600, true);
+  assert.equal(race.lastSector.time, Infinity);
+  assert.deepEqual(race.bestSectors, bests);
+});
+
+test('new circuit records are isolated while old lap records and settings survive', () => {
+  const saved = parseSave(
+    JSON.stringify({
+      version: 1,
+      units: 'kmh',
+      bests: {
+        'vantage-assisted': 71,
+        [`${TRACK_ID}:vantage-assisted`]: 113,
+        'unknown:vantage-assisted': 55,
+      },
+    }),
+  );
+  assert.equal(saved.bests['vantage-assisted'], 71);
+  assert.equal(saved.bests[`${TRACK_ID}:vantage-assisted`], 113);
+  assert.equal(saved.units, 'kmh');
+  assert.equal(Object.keys(saved.bests).length, 2);
+});
+
+test('corner advice calls for braking at excess speed without enforcing vehicle inputs', () => {
+  const slow = drivingAdvice(0.13, 10, 'gt');
+  const fast = drivingAdvice(0.13, 35, 'gt');
+  assert.equal(fast.action, 'BRAKE');
+  assert.notEqual(slow.action, 'BRAKE');
+  assert.equal(fast.corner.name, 'QUARRY RIGHT');
+  assert.ok(drivingAdvice(0.13, 35, 'truck').targetSpeed < fast.targetSpeed);
 });

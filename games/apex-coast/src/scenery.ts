@@ -127,7 +127,10 @@ export function createScenery(
     );
     const x = count < 170 ? near.position.x : -325 + rand() * 1000,
       z = count < 170 ? near.position.z : -550 + rand() * 1100;
-    if (nearestTrack(x, z).distance < 21 || Math.hypot(x - 25, z - 230) < 38)
+    if (
+      nearestTrack(x, z).distance < 21 ||
+      (x > 8 && x < 45 && z > 100 && z < 260)
+    )
       continue;
     const height = 6 + rand() * 7;
     dummy.position.set(x, terrainHeight(x, z) + height * 0.46, z);
@@ -161,7 +164,10 @@ export function createScenery(
       offset = 17 + rand() * 38;
     p.position.addScaledVector(p.right, side * offset);
     const { x, z } = p.position;
-    if (nearestTrack(x, z).distance < 15 || Math.hypot(x - 25, z - 230) < 30)
+    if (
+      nearestTrack(x, z).distance < 15 ||
+      (x > 8 && x < 45 && z > 100 && z < 260)
+    )
       continue;
     const h = 0.25 + rand() * 1.1;
     dummy.position.set(x, terrainHeight(x, z) + h * 0.35, z);
@@ -256,8 +262,15 @@ export function createScenery(
   for (let i = 0; i < 1400; i++) {
     const p = trackPose(rand()),
       side = rand() < 0.5 ? -1 : 1;
-    p.position.addScaledVector(p.right, side * (8.5 + rand() * 20));
-    if (nearestTrack(p.position.x, p.position.z).distance < 8) continue;
+    p.position.addScaledVector(p.right, side * (12 + rand() * 20));
+    if (
+      nearestTrack(p.position.x, p.position.z).distance < 11.5 ||
+      (p.position.x > 8 &&
+        p.position.x < 45 &&
+        p.position.z > 100 &&
+        p.position.z < 260)
+    )
+      continue;
     dummy.position.copy(p.position);
     dummy.position.y = terrainHeight(p.position.x, p.position.z);
     dummy.scale.setScalar(0.8 + rand() * 1.1);

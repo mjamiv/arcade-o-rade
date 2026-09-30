@@ -31,6 +31,9 @@ async function openGame(page: Page) {
 async function start(page: Page) {
   await page.locator('#start').click();
   await expect(page.locator('#countdown')).toBeHidden({ timeout: 45000 });
+  await expect(page.locator('#corner-name')).toContainText('QUARRY RIGHT');
+  await expect(page.locator('#sector-0')).toHaveClass(/active/);
+  await expect(page.locator('#surface-status')).toHaveText('ASPHALT');
 }
 
 test('choose a vehicle, drive with physical motion, pause, resume, and recover', async ({
@@ -77,7 +80,8 @@ test('choose a vehicle, drive with physical motion, pause, resume, and recover',
   expect((await telemetry(page)).phase).toBe('garage');
   // Returning from a recovery must refresh road proximity at the garage spawn.
   // Stale track state previously hid the contact shadow after an off-road exit.
-  expect((await telemetry(page)).progress).toBe(0);
+  const progress = (await telemetry(page)).progress;
+  expect(Math.min(progress, 1 - progress)).toBeLessThan(0.0001);
   expect(errors).toEqual([]);
 });
 
@@ -156,6 +160,10 @@ test('settings persist across reload and free drive is selectable', async ({
     'aria-pressed',
     'true',
   );
+  await page.locator('#start').click();
+  await expect(page.locator('#countdown')).toBeHidden({ timeout: 45000 });
+  await expect(page.locator('#corner-coach')).toBeHidden();
+  await expect(page.locator('#lap-label')).toHaveText('FREE DRIVE');
 });
 
 test('unsupported graphics show recovery guidance instead of a blank screen', async ({

@@ -45,7 +45,7 @@
         <div class="location">
           <span class="location-pin">⌖</span>
           <div>
-            PACIFIC COAST CIRCUIT<small
+            PACIFIC COAST · CLUB CIRCUIT<small
               ><span id="circuit-length">1.5</span> KM &nbsp; / &nbsp; DRY
               ASPHALT &nbsp; / &nbsp; 24°C</small
             >
@@ -109,6 +109,14 @@
           Ⅱ
         </button>
       </div>
+      <div class="sector-strip" aria-label="Sector times">
+        <span id="sector-0">S1 —</span><span id="sector-1">S2 —</span
+        ><span id="sector-2">S3 —</span>
+        <small id="sector-delta">SESSION SPLITS</small>
+      </div>
+      <div id="corner-coach" aria-label="Upcoming corner guidance">
+        <strong id="corner-name"></strong><span id="corner-detail"></span>
+      </div>
       <div id="race-message" role="status"></div>
       <div class="map-panel">
         <canvas
@@ -131,6 +139,10 @@
         <div class="car-instrument">
           <span id="hud-car">VANTAGE GT</span
           ><span id="assist-status">ASSISTS ON</span>
+        </div>
+        <div class="grip-status">
+          <span id="surface-status">ASPHALT</span
+          ><span id="g-force">0.0 G</span>
         </div>
         <div class="pedals">
           <span>THR</span>
@@ -212,8 +224,8 @@
       <label class="setting"
         ><span
           >Driving assists<small
-            >Smoother steering & traction control. New drivers: start
-            here.</small
+            >Corner guidance, smoother steering & traction control. New drivers:
+            start here.</small
           ></span
         ><input type="checkbox" id="assists" checked /></label
       ><label class="setting"
@@ -265,7 +277,9 @@
         </p>
       </div>
       <p id="save-note">
-        Best laps save in this browser, separately for each car and assist mode.
+        Best laps save separately for this circuit, car and assist mode. Old
+        course records are preserved, not compared. Sector comparisons last for
+        this session.
       </p>
       <p class="credits">
         <a
