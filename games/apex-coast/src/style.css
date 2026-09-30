@@ -1527,3 +1527,135 @@ body.touch .drive-hints button {
   color: #d5e5c4;
   margin: 18px 0 0;
 }
+
+/* Compact race-engineering feedback; it never covers the steering/pedals. */
+.sector-strip {
+  position: absolute;
+  top: 101px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sector-strip > span {
+  padding: 5px 9px;
+  background: #152824ce;
+  border-top: 2px solid #74857d;
+}
+.sector-strip > span.active {
+  border-color: var(--accent);
+}
+.sector-strip small {
+  background: #152824ce;
+  padding: 5px;
+  color: #d7dfd7;
+  font-size: 9px;
+}
+#sector-delta[data-faster='true'] {
+  color: var(--accent);
+}
+#corner-coach {
+  position: absolute;
+  top: 143px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 9px 15px;
+  min-width: 220px;
+  text-align: center;
+  border-left: 3px solid var(--accent);
+  background: #152824d9;
+}
+#corner-coach strong {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+#corner-coach span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #dde7d8;
+}
+#corner-coach[data-state='BRAKE'] {
+  border-color: #ff9b6b;
+  background: #57271fed;
+}
+#race-message {
+  top: 210px;
+}
+.grip-status {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0 8px;
+  font-size: 8px;
+  color: #b9d1c4;
+  letter-spacing: 1px;
+}
+#surface-status[data-offroad='true'] {
+  color: #ffb27d;
+}
+@media (max-width: 760px) {
+  .sector-strip {
+    top: 80px;
+    font-size: 8px;
+    gap: 3px;
+  }
+  .sector-strip > span {
+    padding: 4px 6px;
+  }
+  .sector-strip small {
+    font-size: 7px;
+  }
+  #corner-coach {
+    top: 110px;
+    min-width: 185px;
+    padding: 7px 10px;
+  }
+  #corner-coach strong {
+    font-size: 10px;
+  }
+  #corner-coach span {
+    font-size: 8px;
+  }
+  #race-message {
+    top: 172px;
+  }
+}
+@media (max-height: 550px) {
+  .sector-strip {
+    top: 80px;
+  }
+  #corner-coach {
+    top: 108px;
+    min-width: 180px;
+    padding: 5px 10px;
+  }
+  #corner-coach strong {
+    font-size: 9px;
+  }
+  #corner-coach span {
+    font-size: 8px;
+    margin-top: 2px;
+  }
+  #race-message {
+    top: 159px;
+    font-size: 8px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-height: 550px) {
+  .timing > div {
+    padding: 8px 14px;
+  }
+  .timing span {
+    margin-bottom: 4px;
+  }
+  .timing strong {
+    font-size: 18px;
+  }
+}

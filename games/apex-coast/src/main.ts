@@ -19,7 +19,11 @@ import {
   trackLength,
   formatTime,
   TRACK_WIDTH,
+  TRACK_ID,
 } from './track.ts';
+import { terrainHeight } from './terrain.ts';
+import { TireMarks } from './tire-marks.ts';
+import { drivingAdvice } from './driving-advice.ts';
 import { parseSave, SAVE_KEY } from './save.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
@@ -72,6 +76,7 @@ async function boot() {
     6000,
   );
   const world = await createWorld(scene, renderer);
+  const marks = new TireMarks(scene);
   const controls = new Controls();
   const sound = new EngineAudio();
   sound.volume = save.volume / 100;
@@ -108,7 +113,7 @@ async function boot() {
     ctx = map.getContext('2d')!;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function key() {
-    return `${VEHICLES[save.vehicle].id}-${save.assists ? 'assisted' : 'unassisted'}`;
+    return `${TRACK_ID}:${VEHICLES[save.vehicle].id}-${save.assists ? 'assisted' : 'unassisted'}`;
   }
   function message(text: string, seconds = 3) {
     $('race-message').textContent = text;
@@ -159,8 +164,6 @@ async function boot() {
     const spec = VEHICLES[index];
     physics = new DrivingPhysics(spec);
     physics.assists = save.assists;
-    for (const b of world.barriers)
-      physics.addBarrier(b.x, b.z, b.length, b.yaw);
     car = createCar(spec, COLORS[save.color]);
     scene.add(car.body, ...car.wheels);
     for (let i = 0; i < 120; i++)
@@ -227,7 +230,7 @@ async function boot() {
       cameraGoal.copy(position).addScaledVector(forward, 1.24);
       cameraGoal.y += 0.87;
       lookGoal.copy(cameraGoal).addScaledVector(forward, 30);
-      lookGoal.y -= 0.18;
+      lookGoal.y = terrainHeight(lookGoal.x, lookGoal.z) + 1.05;
       camera.fov = 70;
     } else if (cameraMode === 2) {
       cameraGoal.copy(position).addScaledVector(forward, -13);
@@ -244,7 +247,8 @@ async function boot() {
         );
       cameraGoal.y += portrait ? 5 : 3.25;
       lookGoal.copy(position).addScaledVector(forward, portrait ? 4.6 : 7);
-      lookGoal.y += portrait ? 0.4 : 0.7;
+      lookGoal.y =
+        terrainHeight(lookGoal.x, lookGoal.z) + (portrait ? 0.9 : 1.2);
       camera.fov = 57 + Math.min(9, physics.speed * 0.17);
     }
     if (snap || cameraMode === 1) camera.position.copy(cameraGoal);
@@ -261,9 +265,9 @@ async function boot() {
   }
   function drawMap() {
     ctx.clearRect(0, 0, map.width, map.height);
-    const scale = 0.57,
-      offsetX = 180,
-      offsetY = 151;
+    const scale = 0.52,
+      offsetX = 198,
+      offsetY = 143;
     const draw = (x: number, z: number) => [
       x * scale + offsetX,
       z * scale + offsetY,
@@ -324,9 +328,39 @@ async function boot() {
       `GATE ${String(race.nextCheckpoint).padStart(2, '0')}/16`;
     const p = trackPose(race.nextCheckpoint / race.checkpointCount);
     world.gate.position.copy(p.position);
+    world.gate.position.y = terrainHeight(p.position.x, p.position.z);
     world.gate.rotation.y = p.yaw;
     world.gate.visible = phase === 'driving';
     drawMap();
+    const advice = drivingAdvice(
+      trackInfo.progress,
+      physics.speed,
+      physics.spec.kind,
+    );
+    const coach = $('corner-coach');
+    coach.classList.toggle('hidden', !save.assists || countdown > 0);
+    coach.dataset.state = advice.action;
+    $('corner-name').textContent =
+      `${advice.corner.direction === 'RIGHT' ? '↱' : '↰'} ${advice.corner.name}`;
+    $('corner-detail').textContent =
+      `${advice.action} · ${Math.round(advice.corner.distance / 5) * 5} m · ${Math.round(advice.targetSpeed * (save.units === 'mph' ? 2.23694 : 3.6))} ${save.units === 'mph' ? 'mph' : 'km/h'}`;
+    $('surface-status').textContent = physics.surface;
+    $('surface-status').dataset.offroad = String(!physics.onRoad);
+    $('g-force').textContent =
+      `${Math.hypot(physics.lateralG, physics.longitudinalG).toFixed(1)} G`;
+    for (let i = 0; i < 3; i++) {
+      const sector = $(`sector-${i}`);
+      sector.classList.toggle('active', race.sector === i);
+      const time = race.sectors[i];
+      sector.textContent = `S${i + 1} ${time === undefined ? '—' : Number.isFinite(time) ? time.toFixed(1) : 'INVALID'}`;
+    }
+    const split = race.lastSector;
+    $('sector-delta').textContent = split
+      ? `S${split.index + 1} ${!Number.isFinite(split.time) ? 'INVALID' : split.delta === null ? split.time.toFixed(2) + 's' : (split.delta <= 0 ? '−' : '+') + Math.abs(split.delta).toFixed(2) + 's'}`
+      : 'SESSION SPLITS';
+    $('sector-delta').dataset.faster = String(
+      split?.delta !== null && (split?.delta ?? 1) <= 0,
+    );
   }
   function start() {
     settings.close();
@@ -334,6 +368,7 @@ async function boot() {
     sound.start();
     phase = 'driving';
     physics.reset(0.003);
+    marks.clear();
     physics.assists = save.assists;
     race = new RaceState(mode);
     race.previousProgress = 0.003;
@@ -695,6 +730,7 @@ async function boot() {
       if (accumulator > 0.1) accumulator = 0;
       lastBrake = lastInput.brake;
       syncCar();
+      marks.update(physics);
       updateCamera(dt);
       const upsideDown =
         new THREE.Vector3(0, 1, 0).applyQuaternion(car.body.quaternion).y <
@@ -714,7 +750,12 @@ async function boot() {
         if (physics.speed > 3 && f.dot(t) < -0.5)
           message('WRONG WAY · follow the circuit map', 1.5);
         else if (trackInfo.distance > TRACK_WIDTH / 2 + 2)
-          message('OFF TRACK · reduced grip. Ease back onto the road.', 1.4);
+          message(
+            physics.surface === 'PIT LANE'
+              ? 'PIT LANE · rejoin the circuit safely.'
+              : 'OFF TRACK · reduced grip. Ease back onto the road.',
+            1.4,
+          );
       }
     } else if (phase === 'garage') {
       updateCamera(dt);
@@ -731,14 +772,32 @@ async function boot() {
       phase === 'driving',
     );
     world.update(garageTime);
-    world.shadow.position.set(
+    const groundY = terrainHeight(
       physics.body.position.x,
-      0.026,
       physics.body.position.z,
     );
-    world.shadow.rotation.z = -Math.atan2(-forward.x, -forward.z);
+    world.shadow.position.set(
+      physics.body.position.x,
+      groundY + 0.06,
+      physics.body.position.z,
+    );
+    // Follow the same local slope as the collision terrain on climbs/descents.
+    const h = 0.5,
+      x = physics.body.position.x,
+      z = physics.body.position.z;
+    const normal = new THREE.Vector3(
+      terrainHeight(x - h, z) - terrainHeight(x + h, z),
+      2 * h,
+      terrainHeight(x, z - h) - terrainHeight(x, z + h),
+    ).normalize();
+    world.shadow.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      normal,
+    );
+    world.shadow.rotateZ(-Math.atan2(-forward.x, -forward.z));
     world.shadow.visible =
-      physics.body.position.y < 1.4 && trackInfo.distance < TRACK_WIDTH / 2;
+      physics.body.position.y - groundY < 1.4 &&
+      trackInfo.distance < TRACK_WIDTH / 2 + 0.5;
     renderer.render(scene, camera);
   }
   requestAnimationFrame(frame);
@@ -769,6 +828,13 @@ async function boot() {
         vehicle: physics.spec.id,
         steering: physics.steering,
         onRoad: physics.onRoad,
+        surface: physics.surface,
+        wheelSurfaces: [...physics.wheelSurfaces],
+        lateralG: physics.lateralG,
+        longitudinalG: physics.longitudinalG,
+        sector: race.sector,
+        sectors: [...race.sectors],
+        trackId: TRACK_ID,
         slip: physics.slip,
         fps,
         drawCalls: renderer.info.render.calls,

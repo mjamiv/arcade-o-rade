@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — club circuit & driving dynamics
+
+- Replaced the flat loop with a 1.78 km graded club circuit: roughly 24 m of elevation, braking straight, named bends, linked esses, and a summit hairpin.
+- Matched visible road and collision terrain; added physical apex kerbs, generous gravel runoff, distance boards, pit apron/garages/control tower and a collidable pit wall. Removed highway-style center dashes.
+- Per-wheel surface grip and tire load sensitivity; grip-limited engine/brake forces, front brake bias, engine braking, progressive pedals, shift torque interruption, Ackermann steering, and force-based anti-roll bars.
+- Three session-comparison sectors, advisory corner/braking guidance with assists, surface and G-load feedback, and skid marks when tires slide. Cameras and contact shadows follow grades.
+- Preserved prior bests/settings; new course times use an isolated `club-v1` namespace. Still alpha. No AI opponents, pit services, ABS tire-rotation simulation, or manufacturer-validated vehicle data.
+
 ## 0.2.0 — coastal graphics pass
 
 - Rebuilt vehicle bodies with open wheel arches, framed glazing, curved shoulders, distinct headlight treatments, detailed rims, brake discs/calipers, and rounded tires.

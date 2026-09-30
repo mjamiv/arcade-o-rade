@@ -39,7 +39,9 @@ export function parseSave(text: string | null): SaveData {
     if (v.bests && typeof v.bests === 'object')
       for (const [key, value] of Object.entries(v.bests)) {
         if (
-          /^(vantage|rally|summit)-(assisted|unassisted)$/.test(key) &&
+          /^(club-v1:)?(vantage|rally|summit)-(assisted|unassisted)$/.test(
+            key,
+          ) &&
           typeof value === 'number' &&
           Number.isFinite(value) &&
           value > 10

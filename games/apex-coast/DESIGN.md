@@ -4,6 +4,8 @@
 
 Mike requested an engaging racing game for his son, realistic-looking graphics, real physics, and multiple vehicles that behave differently. Browser delivery through Arcade-o-Rade is already established.
 
+Mike requested a substantial gameplay-realism and circuit-realism upgrade on September 29, 2026. Version 0.3.0 implements that direction as a graded club circuit and more constrained vehicle dynamics, not a claim of commercial-simulator accuracy.
+
 ## Implementation assumptions (open to revision)
 
 Working name: **Apex Coast**. Original unbranded vehicles; scenic coastal circuit; time-trial championship (three laps) and unrestricted practice; no combat, purchases, ads, or accounts. Three vehicle classes: lightweight rear-drive GT, all-wheel-drive rally hatch, and heavier four-wheel-drive pickup. Keyboard, gamepad, and multitouch controls. Adjustable assists default on. Mike confirmed phone/tablet as the primary device and supplied no favorite vehicles or games. Age is unspecified; no age is assumed.
@@ -14,9 +16,15 @@ Choose a vehicle and driving mode, learn the circuit in practice or start a thre
 
 ## Physics and rendering
 
-Three.js rendering and cannon-es rigid-body raycast vehicle simulation. Fixed 120 Hz steps; four independent suspension rays, chassis inertia, normal-load-limited lateral friction, driven wheels, brakes, aerodynamic drag, downforce, and speed-sensitive steering. Different masses, drivetrains, torque curves, wheelbases, suspension, and center of mass. Automatic gearbox. Grass reduces grip and increases rolling resistance. Chassis and guardrails collide.
+Three.js rendering and cannon-es rigid-body raycast vehicle simulation. Fixed 120 Hz steps; four independent suspension rays, chassis inertia, normal-load-limited lateral friction, driven wheels, brakes, aerodynamic drag, downforce, and speed-sensitive steering. Different masses, drivetrains, torque curves, wheelbases, suspension, and center of mass. Automatic gearbox. The 1.78 km club circuit has roughly 24 m of elevation, linked corners, a braking straight, apex kerbs, runoff, and a drivable pit apron. Road geometry and wheel contacts share a triangle-interpolated heightfield; raised kerbs, pit wall, and guardrails collide. Nearby static obstacle activation limits raycast cost without tying collisions to camera visibility.
+
+Each tire samples asphalt, kerb, runoff, grass, or the pit lane separately. Tire force is normal-load-limited with mild load sensitivity; engine/brake forces are capped at available longitudinal grip. Progressive pedals, front-biased service brakes, engine braking, shift torque interruption, Ackermann front-wheel angles, and force-based axle anti-roll bars add weight and control feedback. The pickup retains lower grip, more mass, and longer stopping distances. Assists smooth digital steering and reduce power during excessive lateral slip; guidance is advisory, not auto-braking. There is no independently simulated tire carcass or wheel-lock/ABS controller.
 
 This is a game-tuned simulation, not an engineering-validated reproduction of manufacturer vehicles, a full deformable tire model, or a commercial racing simulator equivalent. Vehicle names and figures are fictional.
+
+## Driving feedback and records
+
+Three sector splits compare with session-best sectors; invalid/recovery sectors cannot set a best. Corner names, direction, distance and advisory speed appear with assists enabled. Surface and approximate G-load indicators, slope-following cameras, and a fixed-budget tire-mark buffer communicate grip. Checkpoint/lap order is still enforced. The redesigned course uses the `club-v1` record namespace inside the existing version-1 save; old course bests and user settings are preserved but never compared with new-course times. Sector bests are session-only. Pit buildings are scenery, not a repair/refueling feature.
 
 ## Visual and audio direction
 
